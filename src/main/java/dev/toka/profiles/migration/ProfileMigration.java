@@ -23,7 +23,8 @@ public final class ProfileMigration {
             var prefs=new TreeMap<String,String>();
             if(row.has("FirstWindow")&&!row.get("FirstWindow").isJsonNull())
                 prefs.put("firstWindowDate",row.get("FirstWindow").getAsBigDecimal().toBigIntegerExact().toString());
-            Profile profile=new Profile(uuid,name,Set.of(),prefs,id);
+            String title=row.has("title")&&!row.get("title").isJsonNull()?row.get("title").getAsString():"";
+            Profile profile=new Profile(uuid,name,Set.of(),prefs,id,title);
             if(documents.putIfAbsent(ProfileCodec.key(uuid),ProfileCodec.encode(profile))!=null)
                 throw new IllegalArgumentException("Duplicate UUID");
         }
@@ -73,16 +74,16 @@ public final class ProfileMigration {
         System.out.println("PROFILE_IMPORT_PASS Profiles="+result.profiles()+" Destination="+result.destination()+" Backup="+result.backup());
     }
     public static String permissionPlan(JsonArray rows) {
-        StringBuilder plan=new StringBuilder("# Review and back up LuckPerms before applying. No wildcard or OP grants.\n");
+        StringBuilder plan=new StringBuilder("# UNREVIEWED identity groups only. Administrator must approve capability mapping. No wildcard, admin, trusted or OP grants.\n");
         plan.append("lp creategroup toka-player\n");
         for(String permission:List.of("plan.command","plan.player.self","plan.ingame.self","plan.register.self","plan.unregister.self","plan.webgroup.player"))
             plan.append("lp group toka-player permission set ").append(permission).append(" true\n");
         for(int rank:new int[]{0,1,2,3,4,8}) {
             String group="toka-qx-"+rank;plan.append("lp creategroup ").append(group).append('\n');
             plan.append("lp group ").append(group).append(" parent add toka-player\n");
-            if(rank==0)plan.append("lp group ").append(group).append(" permission set toka.identity.admin true\n");
-            if(rank==0)plan.append("lp group ").append(group).append(" permission set zero.op true\n");
-            if(rank<4)plan.append("lp group ").append(group).append(" permission set toka.identity.trusted true\n");
+
+
+
         }
         for(JsonElement element:rows) {
             JsonObject row=element.getAsJsonObject();int rank=row.get("qx").getAsBigDecimal().intValueExact();

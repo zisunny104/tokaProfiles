@@ -1,6 +1,16 @@
 storage:
   backend: sqlite
   queue-capacity: 128
+  active-directory: storage
+staged:
+  enabled: false
+  source: legacy-playerData.json
+  directory: staged-migration
+  plan-evidence: ""
+  batch-size: 50
+  delay-ms: 100
+  activate-next-restart: false
+  source-refreshed-after-stop: false
 migration:
   enabled: false
   stage: pending

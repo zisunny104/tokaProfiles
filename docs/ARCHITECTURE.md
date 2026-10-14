@@ -60,16 +60,16 @@ library 使用不可變快照或防禦性複製，避免呼叫者修改未保存
 | 領地與村落政策 | tokaRegions | 引用玩家 ID；顯示摘要由公開 API 提供 |
 | 住家 | tokaPortal | 引用玩家 ID，不直接讀共同玩家 SQL |
 | 餘額與交易 | 選定經濟服務及業務模組 | 經濟 API，不複製第二份有效餘額 |
-| Discord 綁定、Bot 與訊息橋接 | 獨立 Discord 插件／one 的後續整合 | 綁定映射引用玩家 ID，經 API 查詢，不以聊天暱稱判定身份 |
-| Plan 展示摘要 | 各資料擁有者的 Plan adapter | 單向提供彙總；Plan 不當身份或授權來源 |
+| Discord 綁定、Bot 與訊息橋接 | 獨立 Discord 插件／one 的後續整合 | 綁定映射引用玩家 ID，經 API 查詢，不以聊天暱稱判定身分 |
+| Plan 展示摘要 | 各資料擁有者的 Plan adapter | 單向提供彙總；Plan 不當身分或授權來源 |
 
-「單一玩家資料」指身份與共用資料有唯一來源，不表示所有插件共用一張大表或互寫資料庫。共同玩家層不依賴 Plan、LuckPerms、Discord、表單或世界管理；外部整合失效仍能查詢玩家身份。其他插件缺身份 API 時停用涉及身份的操作並顯示未就緒，不因查不到玩家而建立另一個帳戶。
+「單一玩家資料」指身分與共用資料有唯一來源，不表示所有插件共用一張大表或互寫資料庫。共同玩家層不依賴 Plan、LuckPerms、Discord、表單或世界管理；外部整合失效仍能查詢玩家身分。其他插件缺身分 API 時停用涉及身分的操作並顯示未就緒，不因查不到玩家而建立另一個帳戶。
 
-Discord 插件獨立儲存綁定映射。綁定需雙方確認的一次性短期代碼，限制嘗試與有效期限；解除與重新綁定重新驗證身份，記錄結果但不公開代碼／Token。在唯一性限制與明確交易下更新映射，不單凭玩家名稱或 Discord 暱稱合併帳戶。Discord 綁定不自動授予管理權；Discord role 到遊戲權限的同步需額外明確政策、驗證與降權流程。
+Discord 插件獨立儲存綁定映射。綁定需雙方確認的一次性短期代碼，限制嘗試與有效期限；解除與重新綁定重新驗證身分，記錄結果但不公開代碼／Token。在唯一性限制與明確交易下更新映射，不單憑玩家名稱或 Discord 暱稱合併帳戶。Discord 綁定不自動授予管理權；Discord role 到遊戲權限的同步需額外明確政策、驗證與降權流程。
 
-新共同玩家與 Discord 插件遵循 SQLite／JSON／YAML、預設 SQLite 的規範。既有 UUID 缺失、重複、名稱大小寫與 Xbox authentication 模式需先盤點；不自行產生另一套離線 UUID。只在同一份資料快照中遷移後才切換身份來源。
+新共同玩家與 Discord 插件遵循 SQLite／JSON／YAML、預設 SQLite 的規範。既有 UUID 缺失、重複、名稱大小寫與 Xbox authentication 模式需先盤點；不自行產生另一套離線 UUID。只在同一份資料快照中遷移後才切換身分來源。
 
-執行順序改為：完整玩家資料欄位與跨插件呼叫盤點 → 身份／資料 API 與搬遷副本 → zero 改委派並關閉舊資料寫入 → LuckPerms 權限搬遷及 Plan 展示 → tokaRegions／Portal 引用接入 → Discord 綁定拆分。各步可獨立測試，正式資料仍依整體一次搬遷流程進行。
+執行順序改為：完整玩家資料欄位與跨插件呼叫盤點 → 身分／資料 API 與搬遷副本 → zero 改委派並關閉舊資料寫入 → LuckPerms 權限搬遷及 Plan 展示 → tokaRegions／Portal 引用接入 → Discord 綁定拆分。各步可獨立測試，正式資料仍依整體一次搬遷流程進行。
 
 ### 三層權限，不互相混用
 
@@ -375,3 +375,71 @@ zero 暫留玩家資料、城市通入口、聊天／顯示與伺服器安全；
 ### 可重查的維護來源
 
 GitHub commit API 形式為 `https://api.github.com/repos/<owner>/<repo>/commits?per_page=1`。上表的維護日期來源如下：[LuckPerms](https://api.github.com/repos/LuckPerms/LuckPerms/commits?per_page=1)、[EconomyAPI](https://api.github.com/repos/Nukkit-coders/EconomyAPI/commits?per_page=1)、[DiscordChat](https://api.github.com/repos/PetteriM1/DiscordChat/commits?per_page=1)、[WorldManager](https://api.github.com/repos/Buddelbubi/WorldManager/commits?per_page=1)、[SimpleScoreboards](https://api.github.com/repos/ign-gg/SimpleScoreboards/commits?per_page=1)、[Plan](https://api.github.com/repos/plan-player-analytics/Plan/commits?per_page=1)、[MultiChat](https://api.github.com/repos/Nukkit-coders/MultiChat/commits?per_page=1)、[InvSeeNK](https://api.github.com/repos/tim03we/InvSeeNK/commits?per_page=1)、[InvSee](https://api.github.com/repos/lt-name/InvSee/commits?per_page=1)、[WorldEssentials](https://api.github.com/repos/PetteriM1/WorldEssentials/commits?per_page=1)、[MinecraftDiscordSync](https://api.github.com/repos/VironLab/MinecraftDiscordSync/commits?per_page=1)。
+
+## 2026-10-14 權限盤點與設計提案（尚未套用）
+
+所有 toka 插件以 Nukkit 為平台定位。PM1E 4511 是目前已驗證的核心版本；不把它寫成唯一適用平台，也不宣稱未測試分支已相容。
+
+權限先盤點、確認用詞與設定格式，再實作。以下角色、能力與降級策略均為提案，不是現有插件已提供的功能。稱號與玩家 UUID 屬 tokaProfiles；稱號不授權。
+
+### 現有機制與缺口
+
+| 範圍 | 現有判斷 | 需要保留／轉換的關係 | 目前缺口與後續方向 |
+| --- | --- | --- | --- |
+| 全服身分 | zero qx 0 為最高，qx < 4 為較高；兼容橋接 admin/trusted | 舊身分顯示、管理操作能力 | 不直接由 qx 生成有效管理權限；負數等未知值需另外拒絕／核對，待實作 |
+| Area／道路／鐵路設施 | open／protect／lock；protect 查最高身分 | 設施範圍、操作種類、維護者 | 保留鎖定語意，不能用普通建造權繞過 |
+| Region／世界範圍 | open／protect／lock；protect 允許 score >= 175 或最高身分 | 原進度門檻與區域政策 | score 是動態條件，不等同永久 LuckPerms 群組或居民身分 |
+| 領地 | owner／creator 與分享名單以玩家名稱保存，另有 OP 例外 | 主人、建立者、被分享者 | 分享名單不等於主人；hasPermission(type) 是未完成 stub，不能宣稱已有細分能力 |
+| Cube／設施新版草稿 | Region／Area／Land 混合判斷；部分保護事件空白 | 不同區域型別與空間範圍 | 尚不能取代舊保護；舊轉換含固定建立者，不直接沿用為新所有權 |
+| 村落／城市／居民 | playerData.village、選村與標籤、城市通介面 | 居民隸屬與公共設施使用 | 目前不是完整居民角色／繼承系統；不能憑村落字串推定管理權 |
+| 傳送與住家 | Portal 同時使用 OP 與 zero 最高身分；建立者名稱 | 住家擁有者、傳送點建立者、他人住家管理 | 直接 OP 例外尚未逐項轉接；所有權與使用指令權分開 |
+| 世界管理 | tokaWorlds.use、tokaWorlds.admin；排程／視窗回應再次檢查 | 掛載／卸載／更名執行權 | 管理權不授予區域建造豁免；世界更名 context 更新仍需設計 |
+| 經濟／贊助／稱號 | 有 OP、最高身分及直接 qx==0；贊助可能改 qx | 扣款、贊助紀錄、展示身分 | 不由贊助或稱號自動授予管理能力；交易與授權需分開 |
+| 告示／方塊紀錄／保護 | OP 與最高身分混用 | 查看紀錄、維護、豁免、還原 | 不共用單一 admin 開關；還原尚未完整實作 |
+| Discord 後台 | one 透過 zero 的離線 PlayerData 檢查最高身分 | 已驗證 Discord 綁定、遠端指令能力 | LuckPerms 離線 context 尚未實作；不能因綁定就授予後台權限 |
+| Plan | 使用 Plan 自己的 permission nodes／web groups；已註冊 LuckPerms extension | 自己資料、他人資料、網頁管理 | Profiles 自訂 extension 未完成；不把所有 toka 管理員都映射 web admin |
+
+上述範圍均納入 tokaRegions／共用授權介面設計，不只領地。現有 source 的直接 isOp、qx 比較、名稱所有權仍保留於舊流程；目前不能只改 permissions.mode 就宣稱全部權限搬遷完成。
+
+### 授權責任與角色繼承
+
+- Profiles：已確認 UUID、名稱歷史、稱號；不提供有效管理權限。
+- LuckPerms：全服／世界的功能能力、context、群組繼承。功能檢查解析後的能力值，不用群組名稱、最高 primary group、prefix 或稱號推定授權。
+- Regions：區域、設施、領地、城市、村落與居民的關係、角色與政策；角色限定該 scope。原建立者、擁有者與分享成員為不同關係。
+- Worlds：世界生命週期與更名連動；不裁決居民或領地成員。
+- Plan：單向展示摘要；不回寫 Profiles、Regions 或權限。
+
+領地主人、分享成員、設施維護者、城市管理者、居民、訪客可以使用不同角色定義。繼承由設定描述，須驗證引用存在與無循環；不把所有角色硬寫成 Java enum，也不為每塊領地建立全服權限組。
+
+提案：以 scopeType + scopeId + playerUUID 保存角色關係，以 action 的能力名稱查角色圖。角色可繼承本 scope 的基礎角色；跨 scope（例如居民可使用城市公共設施）須有明確連動規則，不能因同名角色自動繼承。擁有者有資源管理能力，分享者不因此取得轉讓所有權或再分享權。角色名稱及預設能力待管理員確認。
+
+### 缺少 LuckPerms 的降級提案
+
+| 狀態 | 基本功能 | 複雜功能 |
+| --- | --- | --- |
+| 未安裝 LuckPerms | OP／一般玩家；已確認擁有者仍能操作自己的資源 | 分享、居民分級、自訂角色與繼承停用，資料保留 |
+| LuckPerms 已安裝且就緒 | 依解析後的能力與目標 scope 判斷；不額外 OR isOp | 完成資料與 context 驗證的功能才啟用 |
+| LuckPerms 已安裝但儲存或載入失敗 | 暫停相關授權，不把故障誤當未安裝而退回 OP | 停用相關功能，保留角色資料 |
+| 已啟用複雜權限後，LuckPerms 被移除 | 依明確確認的降級設定恢復基本模式 | 原關係不刪除，不重新解讀為擁有者 |
+
+「降級」只針對基本模式，不保留暗藏的分享權。未知 UUID／有歧義名稱不能推定擁有者。OP 是否能繞過 lock、跨世界管理、代管他人資源須逐項確認，不直接全部允許。這張表尚未寫入現有插件程式。
+
+### 決策、context 與效能
+
+操作要提供操作者 UUID、目標世界／scope、action 與資料版本。以方塊、容器、住家或待管理資源的位置判定 scope，不只查玩家腳下位置。遠端操作不可沿用玩家所在領地的 context。重疊區域的覆寫順序、lock 與明確拒絕優先序需設定並驗證，不取任意 HashMap 第一筆。
+
+基本能力通過後，再判斷目標 scope 的所有權／角色與政策。若有 bypass，必須是獨立能力並記錄使用；不把一般世界管理權當作所有區域的 bypass。對 LuckPerms 使用解析後結果與正確 QueryOptions，不能自行宣稱 false 永遠優先於所有 true；繼承、精確節點與通配的解析應交給 LuckPerms。
+
+區域 context 的動態值必須由插件註冊與計算，不是只在指令尾端寫 context 就會生效。離線玩家沒有即時位置，須異步載入 User 並明確指定目標 query options；未知情況拒絕。角色或 context 更新要使快取失效；事件主執行緒不等待 SQL／Future。
+
+### 驗證與實作順序
+
+1. 管理員確認術語、功能能力與角色矩陣；備份現有 qx／OP／所有權／居民／分享資料。
+2. 在私人鏡像進行名稱到 UUID 對照；有衝突就保留舊關係，不猜測或授權。
+3. 權限先 shadow，逐項記錄舊／新決策差異；居民、score 門檻、分享與所有權分開測試。
+4. 驗證一般玩家、OP、擁有者、分享者、居民、管理者、跨 scope、繼承、明確拒絕、未設定、context、循環角色、依賴失效、撤權後視窗與排程。
+5. 逐模組切換；新舊保護不同時開啟。新流程完成才棄用直接 qx／isOp 判斷。
+
+已完成的實測僅有 LuckPerms 5.5.87 在 Nukkit 測試核心上的解析：群組繼承、目標世界／區域隔離、精確拒絕覆蓋通配與未設定拒絕，以及 Plan 3638 註冊 LuckPerms extension。這不是 tokaRegions 已實作，也不是所有現有功能已改完。
+
+參考：[LuckPerms 使用與繼承](https://luckperms.net/wiki/Usage)、[Context](https://luckperms.net/wiki/Context)、[API 與離線載入](https://luckperms.net/wiki/Developer-API-Usage)、[解析優先序](https://luckperms.net/wiki/Advanced-Setup)、[Nukkit 設定](https://github.com/LuckPerms/LuckPerms/blob/master/nukkit/src/main/resources/config.yml)。能力拆分、角色圖與降級流程是本專案設計提案。

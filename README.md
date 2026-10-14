@@ -1,67 +1,97 @@
 # tokaProfiles
 
-玩家共同身分與偏好服務，版本 **0.1.0**，Java 21／PM1E 4511。
+Nukkit 玩家身分、偏好與稱號服務。版本 **0.1.1**，Java 21，預設 SQLite，也支援 JSON／YAML。PM1E 4511 是目前的測試基準，不是唯一適用核心；其他 Nukkit 分支仍須驗證，不宣稱全部相容。
 
-## 最小拆分狀態
+## 功能與拆分進度
 
 | 功能 | 狀態 |
 | --- | --- |
-| UUID、名稱／歷史名稱、固定 legacy ID 對照 | 已實作；拒絕衝突與缺少 UUID |
-| 不可變 Profile、名稱索引、背景有界寫入 | 已實作，保存成功才發布新快照 |
-| SQLite／JSON／YAML | 已實作，預設 SQLite；tokaStorage 私有打包，不需另裝插件 |
-| 舊 playerData 匯入、來源備份、逐筆讀回 | 已實作；不覆寫既有目的地 |
-| YAML 交接啟動匯入 | 明確 enabled／confirm／來源 SHA256 後才執行；不猜測、合併或重複匯入 |
-| LuckPerms 基本身分計畫 | 已實作離線產生指令；不自動提升 OP 或網頁管理權 |
-| 城市通新入口 `/profiles` | 僅個人資料；其他業務選單尚未搬遷 |
-| zero 全部玩家資料接管 | **尚未完成**；zero 1.7.8 只支援 legacy／shadow 比對，不雙寫 |
-| Plan 自訂資料展示、Discord 綁定、領地權限組 | 後續階段；不宣稱已接入 |
+| UUID、名稱／歷史名稱、legacy ID | 已實作；不生成替代 UUID |
+| 名稱歧義 | 同名不同 UUID 保留不同身分，名稱查詢不任選 |
+| 不可變 Profile、背景有界寫入 | 保存成功才發布新快照 |
+| 稱號／zero 轉接 | 已抽出；zero 1.7.9 支援 legacy／profiles／disabled，預設 legacy |
+| 付費稱號 | Profiles 模式扣款前攔截；跨資料庫交易尚未完成 |
+| SQLite／JSON／YAML | 已實作；tokaStorage 私有打包，不需另裝插件 |
+| 背景分批搬遷 | checkpoint、中斷續跑、來源備份、完整讀回比對 |
+| UUID／名稱衝突 | 私人分組報告與差異欄位；不自動合併、刪除或猜測 |
+| Plan 身分對照 | 匯出的 UUID／名稱只作交叉核對；不寫入 Plan |
+| 下次重啟切換 | 需停服更新來源與明確確認；驗證失敗保留原有效來源 |
+| LuckPerms 指令提案 | 只產生身分群組與基本 Plan 自身資料權限；qx 不自動映射 admin／trusted／OP |
+| 城市通 `/profiles` | 個人資料入口；業務選單尚未搬遷 |
+| Plan 自訂展示／Discord 綁定／zero 全部資料接管 | 尚未完成 |
 
-此版可以與舊資料服務並存測試，但不是「已搬完 zero」。不要移除原 MySQL／DbLib。住家、領地、餘額、有效權限、Discord ID、登入位置／IP 等不放入公開 Profile；完整舊 row 只留在私有搬遷備份。
+不要移除 MySQL／DbLib。餘額、有效權限、領地、住家、Discord 綁定與 IP 仍由既有服務負責。完整來源與衝突報告含私人資料，不提交 Git。
 
-## API 與資料責任
+## 身分與衝突
 
-透過已啟用的 Main.profiles() 取得 repository；以 UUID 或名稱查詢，put(Profile) 回傳 CompletableFuture。一般讀取走索引，不同步查 SQL。呼叫者在背景保存完成後，將涉及遊戲物件的操作排回主執行緒；不要在玩家移動等熱路徑等待 future。
+UUID 是主鍵，名稱只是索引。`findByName` 遇歧義回傳 empty；`resolveName` 回傳候選 UUID。相同 UUID 多筆來源、同名不同 UUID、重複 legacy ID、缺少或無效 UUID，均列入待確認。Plan 名稱／UUID 矛盾也會阻擋切換；Plan 不單獨裁決身分。
 
-Profile API 提供 uuid/profileId/name/aliases/preferences/legacyId。profileId 等於既有已確認核心 UUID，不創造第二套身份。firstWindowDate 保留原 FirstWindow 的日期字串，不當作 boolean。稱號與職業暫留舊資料，因稱號購買涉及跨服務交易，未驗證前不先切換。
+`identity-audit.json` 列出來源 row index、差異欄位與 Plan 對照。即使只差 legacy ID，仍只是合併候選。餘額不相加、權限不取最高、Discord 綁定不覆蓋。此版沒有自動清理工具。
 
-## 從 VPS 的 MySQL 匯出與驗證
+無衝突資料可先寫入待啟用資料集，但整體有衝突時狀態是 `blocked-conflicts`，不會部分切換有效稱號來源。人工核對後建立新的 stage，原始快照保留。
 
-先停服、備份 SQL／插件設定。export-jdbc 是只讀 SELECT；需要另在 classpath 放 MySQL JDBC driver（既有 DbLib JAR 若包含 driver 可使用）。密碼從互動 console 或 TOKA_DB_PASSWORD 讀取，不放命令參數或 Git。
+## 背景搬遷
+
+來源為唯讀、一致的 playerData JSON 快照：rows 陣列，或 `{schema:1, table:"playerData", rows:[...]}`。上限 64 MiB，盤點仍在記憶體執行；不是任意大小的串流匯入器。
 
 ```text
-java -cp 'tokaProfiles-0.1.0.jar:DbLib_TK.jar' dev.toka.profiles.migration.ProfileMigration export-jdbc 'jdbc:mysql://localhost:3306/nukkit?useSSL=false' nukkit legacy-playerData.json
-java -cp tokaProfiles-0.1.0.jar dev.toka.profiles.migration.ProfileMigration import legacy-playerData.json sqlite /ser/profiles-import/storage /ser/profiles-import/backups
-java -cp tokaProfiles-0.1.0.jar dev.toka.profiles.migration.ProfileMigration plan-permissions legacy-playerData.json luckperms-plan.txt
+java -cp tokaProfiles-0.1.1.jar dev.toka.profiles.migration.StagedProfileMigration stage SOURCE.json sqlite NEW_STAGE 50 100 PLAN_EVIDENCE.json
+java -cp tokaProfiles-0.1.1.jar dev.toka.profiles.migration.StagedProfileMigration verify NEW_STAGE CURRENT_SOURCE.json sqlite
 ```
 
-上面 MySQL 匯出尚未在正式資料庫實測；匯入、指令計畫與三後端已使用虛構資料測試。空白 UUID、名稱大小寫碰撞、重複 ID、未知 qx 會停止，須先人工核對，不假造 UUID。snapshot 包含私人資料，不上傳 GitHub。
+Plan 證據為 `[{"uuid":"UUID","name":"名稱"}]`，最後一個參數可省略。CLI 等待背景 worker，不啟用正式資料。相同 stage 可以續跑；來源、後端或證據變更就換新 stage。
 
-也可把 snapshot 放在 plugins/tokaProfiles/legacy-playerData.json，設定 migration.enabled=true、stage=pending、confirm=true 與 source-sha256，再啟動。新 storage 必須不存在。完成後 stage=imported、confirm=false；中斷或設定保存失敗要核對紀錄，不直接重跑。
+插件內背景工作：
 
-## zero 與 LuckPerms 交接
+```yaml
+storage:
+  backend: sqlite
+  active-directory: storage
+  queue-capacity: 128
+staged:
+  enabled: true
+  source: legacy-playerData.json
+  directory: staged-migration
+  plan-evidence: plan-evidence.json
+  batch-size: 50
+  delay-ms: 100
+  activate-next-restart: false
+  source-refreshed-after-stop: false
+```
 
-zero 1.7.8 的 config.yml：
+路徑限制在插件資料目錄內，不接受符號連結。搬遷寫入獨立資料集；停用時取消 worker 並保留進度。
+
+**線上 SQL 的後續變更尚未自動追蹤。** 切換前正常停服、重新匯出來源。有變更就用新 stage 重跑；不能套用過時快照。來源一致、衝突已解決、讀回通過後，設定 `activate-next-restart: true` 與 `source-refreshed-after-stop: true`。下次啟動驗證通過才更新 `storage.active-directory`，保留舊 storage；啟用後不重跑該 stage。
+
+原 migration.enabled／confirm／source-sha256 離線匯入仍相容，新流程建議 staged。後端切換必須備份與驗證，不能直接改 backend。
+
+## zero 與權限交接
 
 ```yaml
 profiles:
-  mode: shadow # legacy 或 shadow；正式寫入接管尚未開放
+  mode: shadow
+titles:
+  mode: legacy # 有效 Profiles 稱號資料完整後才改 profiles
 permissions:
-  mode: legacy # 匯入並驗證 LuckPerms 後才改 luckperms；也可 disabled
+  mode: legacy # 功能權限與用詞確認、LuckPerms 驗證後才切換
 city-pass:
-  mode: legacy # profiles 只開新資料選單；disabled 可隱藏未完成入口
-features: {} # 例如 land: false，關閉尚未準備好的模組
+  mode: legacy
 ```
 
-`zero status` 提供資料比對結果。shadow 不改舊有效資料，避免雙寫。LuckPerms 模式對線上玩家檢查 toka.identity.admin／toka.identity.trusted；缺少 LuckPerms 不回退 qx，離線授權尚未實作。qx 仍保留顯示與 legacy 相容，後續能力節點搬完才刪除。城市通舊入口已標記棄用，切到 profiles 後不再打開原大型選單；尚未搬遷的業務功能維持各自指令或停用。
+Profiles 稱號模式依 UUID 讀寫，zero 不再把稱號寫回 SQL；其他欄位維持原服務。依賴失效不讀過時 SQL 稱號，也不讓整個 zero 停用。資料集啟用與 zero 稱號來源切換是兩步，目前不自動改其他插件的設定。
 
-權限指令計畫保留 qx 0/1/2/3/4/8 各組，不合併身份；只給基本能力與 Plan 自己資料查閱。領地所有者／成員是每塊領地的關係，不等於 LuckPerms 全域群組；後續用區域上下文與專用節點接入，不能授予全服建築豁免。
+稱號是顯示資料，不授權。LuckPerms 管理能力節點；領地主人／成員屬區域關係，不等於全服群組。舊 qx 顯示與相容規則不能直接變成新管理權限。現有 `plan-permissions` 只產生未審核的指令提案，不會執行；管理員須確認分組與能力。
 
-## 驗證、編譯與更新
+## API、編譯與驗證
 
-6 個 Profiles 單元／搬遷測試通過，三後端與 PM1E／zero shadow 的實際核心測試通過。沒有真玩家、正式 MySQL、Linux VPS、Plan 自訂展示或斷電驗證。SQLite／JSON／YAML 的格式限制沿用 tokaStorage；JSON／YAML 上限 16 MiB，頻繁資料建議 SQLite。
+Main.profiles() 取得 repository。Profile 提供 uuid/name/aliases/preferences/legacyId/title。舊 schema 1 缺 title 時預設空字串。`put` 與 `updateTitle(UUID,String)` 回傳 CompletableFuture；updateTitle 依 writer 最新快照修改，不覆蓋其他欄位。涉及遊戲物件請排回主執行緒，不在玩家事件等待 future。
 
-先於同層 tokaStorage 執行 build.ps1 install，再以 Java 21 執行本專案 build.ps1。產物 output/tokaProfiles-0.1.0.jar；output 不進版控。使用 Maven 預設 repository 以外的環境，透過 -Repository 指定相同快取。PM1E 核心需已安裝為 provided dependency。
+先安裝同層 tokaStorage，再執行 build.ps1。產物 `output/tokaProfiles-0.1.1.jar`，output 不進版控。Nukkit 核心是 provided dependency，目前編譯基準 PM1E 4511。
 
-新安裝可先加 Profiles，再更新 zero 1.7.8，保持 legacy 驗證；要搬遷必須走上述流程。既有服務不因安裝 Profiles 自動切換。正式切換與乾淨移除舊寫入仍是後續工作，不能只換 JAR 就刪舊資料。
+11 個單元／搬遷測試通過，包含三後端、衝突、Plan 矛盾、稱號、中斷續跑。核心測試驗證三後端稱號轉接、舊 SQL 稱號不變、依賴失效隔離與重啟啟用。Plan 3638／LuckPerms 5.5.87 共同啟動通過，Plan 註冊 LuckPerms extension。
 
-整體規劃與替代方案集中於 [架構與搬遷計畫](docs/ARCHITECTURE.md)。該文件含歷史盤點，實際已完成範圍以本 README 的版本狀態為準。
+VPS 玩家資料鏡像已實測：4324 筆來源、3217 筆通過搬遷與讀回比對、1107 筆待確認。比對使用 838 筆 Plan 身分證據；測試 Plan 使用獨立 SQLite，沒有搬入完整歷史分析資料庫。原始快照與正式資料保持不變。
+
+正式資料切換、真人登入、Plan 自訂 Profiles extension、跨服務付費交易與其他 Nukkit 核心分支驗證尚未完成。勿將測試 fixture 的 DbLib 或設定部署正式站。
+
+整體規劃集中於 [架構與搬遷計畫](docs/ARCHITECTURE.md)。歷史盤點以本 README 最新狀態為準。
