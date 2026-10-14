@@ -63,3 +63,5 @@ features: {} # 例如 land: false，關閉尚未準備好的模組
 先於同層 tokaStorage 執行 build.ps1 install，再以 Java 21 執行本專案 build.ps1。產物 output/tokaProfiles-0.1.0.jar；output 不進版控。使用 Maven 預設 repository 以外的環境，透過 -Repository 指定相同快取。PM1E 核心需已安裝為 provided dependency。
 
 新安裝可先加 Profiles，再更新 zero 1.7.8，保持 legacy 驗證；要搬遷必須走上述流程。既有服務不因安裝 Profiles 自動切換。正式切換與乾淨移除舊寫入仍是後續工作，不能只換 JAR 就刪舊資料。
+
+整體規劃與替代方案集中於 [架構與搬遷計畫](docs/ARCHITECTURE.md)。該文件含歷史盤點，實際已完成範圍以本 README 的版本狀態為準。
