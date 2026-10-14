@@ -1,0 +1,13 @@
+name: tokaProfiles
+main: dev.toka.profiles.Main
+version: 0.1.0
+api: ["1.0.0"]
+author: zisunny104
+load: STARTUP
+commands:
+  profiles:
+    description: 玩家資料與城市通入口
+    permission: tokaProfiles.self
+permissions:
+  tokaProfiles.self:
+    default: true

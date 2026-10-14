@@ -1,0 +1,8 @@
+target/
+output/
+.build-tools/
+.idea/
+*.iml
+storage/
+backups/
+legacy-playerData.json

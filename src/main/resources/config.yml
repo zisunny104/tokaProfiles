@@ -1,0 +1,9 @@
+storage:
+  backend: sqlite
+  queue-capacity: 128
+migration:
+  enabled: false
+  stage: pending
+  source: legacy-playerData.json
+  source-sha256: ""
+  confirm: false
