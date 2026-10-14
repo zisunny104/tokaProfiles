@@ -12,4 +12,3 @@ public final class Profile {
  private static String validName(String name) { if(name==null||name.isBlank()||!name.equals(name.trim())) throw new IllegalArgumentException("Invalid name"); return name; }
  public UUID uuid(){return uuid;} public UUID profileId(){return uuid;} public String name(){return name;} public Set<String> aliases(){return aliases;} public Map<String,String> preferences(){return preferences;} public Optional<String> legacyId(){return Optional.ofNullable(legacyId);}
 }
-

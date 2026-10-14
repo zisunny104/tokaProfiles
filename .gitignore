@@ -3,6 +3,6 @@ output/
 .build-tools/
 .idea/
 *.iml
-storage/
-backups/
+/storage/
+/backups/
 legacy-playerData.json
