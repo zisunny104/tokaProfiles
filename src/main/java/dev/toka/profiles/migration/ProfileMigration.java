@@ -24,7 +24,8 @@ public final class ProfileMigration {
             if(row.has("FirstWindow")&&!row.get("FirstWindow").isJsonNull())
                 prefs.put("firstWindowDate",row.get("FirstWindow").getAsBigDecimal().toBigIntegerExact().toString());
             String title=row.has("title")&&!row.get("title").isJsonNull()?row.get("title").getAsString():"";
-            Profile profile=new Profile(uuid,name,Set.of(),prefs,id,title);
+            var aliases=new LinkedHashSet<String>();if(row.has("aliases"))for(var alias:row.getAsJsonArray("aliases")){if(!alias.isJsonPrimitive()||!alias.getAsJsonPrimitive().isString())throw new IllegalArgumentException("Invalid alias");aliases.add(alias.getAsString());}
+            Profile profile=new Profile(uuid,name,aliases,prefs,id,title);
             if(documents.putIfAbsent(ProfileCodec.key(uuid),ProfileCodec.encode(profile))!=null)
                 throw new IllegalArgumentException("Duplicate UUID");
         }

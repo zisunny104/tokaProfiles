@@ -1,0 +1,13 @@
+package dev.toka.profiles;
+import com.google.gson.*;
+import dev.toka.profiles.migration.*;
+import org.junit.Test;
+import java.util.*;
+import static org.junit.Assert.*;
+public class PlanResolutionTest {
+ private JsonObject row(int id,String name,UUID uuid,int coins){var r=new JsonObject();r.addProperty("id",id);r.addProperty("name",name);r.addProperty("UUID",uuid.toString());r.addProperty("jb",coins);r.addProperty("title","title-"+id);return r;}
+ private JsonArray plan(UUID uuid,String name){var p=new JsonObject();p.addProperty("uuid",uuid.toString());p.addProperty("name",name);var a=new JsonArray();a.add(p);return a;}
+ @Test public void planNameSelectsOneAndArchivesCompleteOtherWithoutTimeGate(){UUID uuid=UUID.randomUUID();var rows=new JsonArray();var old=row(1,"Former",uuid,99);old.addProperty("lastLogoutTime",Long.MAX_VALUE);rows.add(old);var current=row(2,"Current",uuid,7);current.addProperty("lastLogoutTime",0);rows.add(current);var result=PlanResolution.resolve(rows,plan(uuid,"Current"));assertEquals(1,result.active().size());assertEquals(2,result.active().get(0).getAsJsonObject().get("id").getAsInt());assertEquals(7,result.active().get(0).getAsJsonObject().get("jb").getAsInt());assertEquals(old,result.history().get(0).getAsJsonObject().get("original"));assertTrue(result.pending().isEmpty());assertEquals(1,result.active().get(0).getAsJsonObject().getAsJsonArray("aliases").size());assertTrue(IdentityAudit.inspect(result.active(),plan(uuid,"Current")).ready());var replay=PlanResolution.resolve(result.active(),plan(uuid,"Current"));assertEquals(result.active(),replay.active());assertTrue(replay.history().isEmpty());}
+ @Test public void planCannotPickDifferingIdenticalNamesByArbitraryId(){UUID uuid=UUID.randomUUID();var rows=new JsonArray();rows.add(row(1,"Current",uuid,10));rows.add(row(2,"Current",uuid,20));var result=PlanResolution.resolve(rows,plan(uuid,"Current"));assertEquals(2,result.active().size());assertTrue(result.history().isEmpty());assertEquals(1,result.pending().size());}
+ @Test public void equivalentDuplicatesAreStableAndPlanAbsenceNeverArchives(){UUID uuid=UUID.randomUUID();var rows=new JsonArray();var a=row(1,"Current",uuid,10);var b=a.deepCopy();b.addProperty("id",2);b.addProperty("lastLogoutTime",999999);a.addProperty("lastLogoutTime",0);rows.add(b);rows.add(a);var resolved=PlanResolution.resolve(rows,plan(uuid,"Current"));assertEquals(1,resolved.active().get(0).getAsJsonObject().get("id").getAsInt());assertEquals(1,resolved.history().size());var unknown=PlanResolution.resolve(rows,new JsonArray());assertEquals(2,unknown.active().size());assertTrue(unknown.history().isEmpty());}
+}

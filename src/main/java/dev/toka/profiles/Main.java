@@ -48,6 +48,13 @@ public final class Main extends PluginBase {
  }
  public ProfileRepository profiles(){if(profiles==null||profiles.state()!=ProfileRepository.State.READY)throw new IllegalStateException("Profiles unavailable");return profiles;}
  public void openCityPass(Player player){var profile=profiles().find(player.getUniqueId());String content=profile.map(p->"玩家："+p.name()+"\n識別碼："+p.profileId()).orElse("尚未完成玩家資料搬遷。請聯絡管理員。");var form=new FormWindowSimple("城市通",content);form.addButton(new ElementButton("關閉"));player.showFormWindow(form,21080000);}
- @Override public boolean onCommand(CommandSender sender,Command command,String label,String[] args){if(!(sender instanceof Player player)){sender.sendMessage("此指令請在遊戲內使用。");return true;}if(!sender.hasPermission("tokaProfiles.self"))return false;openCityPass(player);return true;}
+ @Override public boolean onCommand(CommandSender sender,Command command,String label,String[] args){
+  if(args.length>0&&(args[0].equalsIgnoreCase("title")||args[0].equalsIgnoreCase("titles"))){
+   if(!sender.hasPermission(dev.toka.profiles.command.TitleAdmin.PERMISSION)){sender.sendMessage("您沒有權限修改稱號。");return true;}
+   ProfileRepository repository;try{repository=profiles();}catch(IllegalStateException e){sender.sendMessage("玩家資料尚未就緒，稱號未更動。");return true;}
+   dev.toka.profiles.command.TitleAdmin.run(repository,java.util.Arrays.copyOfRange(args,1,args.length)).whenComplete((message,failure)->getServer().getScheduler().scheduleTask(this,()->sender.sendMessage(failure==null?message:"稱號未儲存："+failure.getMessage())));
+   return true;
+  }
+  if(!(sender instanceof Player player)){sender.sendMessage("此指令請在遊戲內使用。");return true;}if(!sender.hasPermission("tokaProfiles.self"))return false;openCityPass(player);return true;}
  @Override public void onDisable(){if(migration!=null&&!migration.isDone())migration.cancel(true);if(profiles!=null)try{profiles.close();}catch(Exception e){getLogger().error("Profile writer did not shut down cleanly",e);}}
 }
