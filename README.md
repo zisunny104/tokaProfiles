@@ -1,6 +1,6 @@
 # tokaProfiles
 
-整體拆分現況只維護於 [拆分主文件](https://github.com/zisunny104/tokaProfiles/blob/main/docs/ARCHITECTURE.md)；本 README 維護本專案的設定、API 與使用限制。
+整體拆分現況只維護於 [拆分主文件](https://github.com/zisunny104/zero/blob/master/docs/ARCHITECTURE.md)；本 README 維護本專案的設定、API 與使用限制。
 
 Nukkit 玩家身分、偏好與稱號服務。版本 **0.1.4**，Java 21，預設 SQLite，也支援 JSON／YAML。PM1E 4511 是目前的測試基準，不是唯一適用核心；其他 Nukkit 分支仍須驗證，不宣稱全部相容。
 
@@ -97,3 +97,4 @@ VPS 玩家資料鏡像已實測：4324 筆來源、3217 筆通過搬遷與讀回
 正式資料切換、真人登入、Plan 自訂 Profiles extension、跨服務付費交易與其他 Nukkit 核心分支驗證尚未完成。勿將測試 fixture 的 DbLib 或設定部署正式站。
 
 整體規劃集中於 [架構與搬遷計畫](docs/ARCHITECTURE.md)。歷史盤點以本 README 最新狀態為準。
+
