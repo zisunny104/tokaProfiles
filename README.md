@@ -96,9 +96,9 @@ VPS 玩家資料鏡像已實測：4324 筆來源、3217 筆通過搬遷與讀回
 
 正式資料切換、真人登入、Plan 自訂 Profiles extension、跨服務付費交易與其他 Nukkit 核心分支驗證尚未完成。勿將測試 fixture 的 DbLib 或設定部署正式站。
 
-整體規劃集中於 [架構與搬遷計畫](docs/ARCHITECTURE.md)。歷史盤點以本 README 最新狀態為準。
+整體規劃見[拆分主文件](https://github.com/zisunny104/zero/blob/master/docs/ARCHITECTURE.md)。歷史盤點以本 README 最新狀態為準。
 
 
 ## 多語系（0.2.0）
 
-所有玩家看得到的文字（稱號指令回應、城市通表單、後台 log、help）集中在 `src/main/resources/lang/zh-TW.yml`，由內嵌的 tokaI18n 讀取；`config.yml` 的 `language` 決定語言（目前只有 `zh-TW`）。伺服器擁有者可把同名檔放到 `plugins/tokaProfiles/lang/` 覆蓋個別文字。新增 `/profiles help`，管理員另可看到稱號與遷移工具的完整用法。啟用資料集或完成離線匯入時改用單行編輯改寫 `config.yml`，不再整檔重存，因此設定檔註解會保留。key 清單與待確認事項見 [docs/I18N.md](docs/I18N.md)。
+所有玩家看得到的文字（稱號指令回應、城市通表單、後台 log、help）集中在 `src/main/resources/lang/zh-TW.yml`，由內嵌的 tokaI18n 讀取；`config.yml` 的 `language` 決定語言（目前只有 `zh-TW`）。伺服器擁有者可把同名檔放到 `plugins/tokaProfiles/lang/` 覆蓋個別文字。新增 `/profiles help`，管理員另可看到稱號與遷移工具的完整用法。啟用資料集或完成離線匯入時改用單行編輯改寫 `config.yml`，不再整檔重存，因此設定檔註解會保留。。共用的多語系原則見[拆分主文件](https://github.com/zisunny104/zero/blob/master/docs/ARCHITECTURE.md)。
