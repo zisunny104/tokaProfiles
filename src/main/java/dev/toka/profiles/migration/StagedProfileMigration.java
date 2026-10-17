@@ -67,7 +67,7 @@ public final class StagedProfileMigration {
                 manifest.addProperty("status","staging");atomicJson(manifestPath,manifest);
             }
             atomicJson(stage.resolve("identity-audit.json"),audit.report());
-            Files.writeString(stage.resolve("NOTICE.txt"),"私人搬遷快照。不可加入 Git。ready 不代表正式資料已切換；線上來源仍須停服後補齊差異。\n",StandardCharsets.UTF_8);
+            Files.writeString(stage.resolve("NOTICE.txt"),dev.toka.profiles.Texts.get().text("log.stageNotice")+"\n",StandardCharsets.UTF_8);
             List<Map.Entry<String,JsonObject>> entries=new ArrayList<>(expected.entrySet());
             try(DocumentStore store=DocumentStore.open(new StoreConfig(backend,stage.resolve("data"),1))) {
                 Map<String,JsonObject> existing=store.snapshot();

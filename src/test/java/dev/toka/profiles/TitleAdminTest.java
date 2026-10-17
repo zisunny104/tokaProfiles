@@ -29,6 +29,10 @@ public class TitleAdminTest {
         return repository;
     }
 
+    private static String text(String key, Object... arguments) {
+        return dev.toka.profiles.Texts.get().text(key, arguments);
+    }
+
     private static Profile profile(UUID uuid, String name, String... aliases) {
         return new Profile(uuid, name, Set.of(aliases), Map.of(), null);
     }
@@ -50,13 +54,13 @@ public class TitleAdminTest {
     public void setsShowsAndClearsATitle() throws Exception {
         UUID uuid = UUID.randomUUID();
         try (ProfileRepository repository = open(profile(uuid, "Sunny"))) {
-            assertEquals("Sunny 的稱號：（沒有）", run(repository, "sunny"));
+            assertEquals(text("msg.title.show", "Sunny", text("status.noTitle")), run(repository, "sunny"));
 
-            assertEquals("已將 Sunny 的稱號設為：村長 一號", run(repository, "Sunny", "村長", "一號"));
+            assertEquals(text("msg.title.set", "Sunny", "村長 一號"), run(repository, "Sunny", "村長", "一號"));
             assertEquals("村長 一號", repository.find(uuid).orElseThrow().title());
-            assertEquals("Sunny 的稱號：村長 一號", run(repository, "Sunny"));
+            assertEquals(text("msg.title.show", "Sunny", "村長 一號"), run(repository, "Sunny"));
 
-            assertEquals("已清除 Sunny 的稱號", run(repository, "Sunny", "clear"));
+            assertEquals(text("msg.title.cleared", "Sunny"), run(repository, "Sunny", "clear"));
             assertEquals("", repository.find(uuid).orElseThrow().title());
         }
     }

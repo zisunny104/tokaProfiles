@@ -1,0 +1,121 @@
+# tokaProfiles 繁體中文語系檔（zh-TW）
+#
+# 這個檔案放著插件所有「使用者看得到的文字」。伺服器擁有者可以把同名檔放進
+# plugins/tokaProfiles/lang/zh-TW.yml 覆蓋個別文字，沒寫到的 key 仍使用 jar 內建的內容。
+# 語言由 config.yml 的 language 決定。
+#
+# 參數：${0}、${1}… 依序代表程式傳入的值（只替換一次，缺少時保留原樣並警告）。
+# 色碼慣例（與 tokaI18n 一致）：
+#   §b 一般文字　§a 數字／名稱／值（寫成 §a${0}§b）　§e 警告／指令　§c 錯誤與拒絕
+#   §7 用法與補充說明　§6 標題　§r 重設樣式
+#   後台 log 不加方括號標籤；玩家訊息固定使用前綴「§7[玩家資料]§r 」。
+# 命令列工具（StagedProfileMigration、ProfileMigration、PlanResolution）輸出的
+# PROFILE_IMPORT_PASS、STAGE_RESULT 等結果標記是給腳本判讀的穩定 code，不翻譯、不放在這裡。
+
+# ───────────────────────── 指令說明與用法（cmd） ─────────────────────────
+cmd:
+  profiles:
+    # 指令簡述
+    desc: "玩家資料與城市通入口；OP 可用 /profiles title 修改稱號"
+    # 總用法
+    usage: "/profiles [help | title <玩家名稱或 UUID> [稱號 | clear]]"
+    # /profiles title 的用法
+    usageTitle: "/profiles title <玩家名稱或 UUID> [稱號 | clear]"
+
+# ───────────────────────── /profiles help（help） ─────────────────────────
+# help.profiles：每行格式為「標籤|內容」，依權限過濾後顯示（標籤與 | 不會顯示）：
+#   *       所有人都顯示
+#   title   需要 tokaProfiles.title.admin 權限
+# ${0}＝稱號長度上限（目前 255）
+help:
+  profiles:
+    - "*|§6§ltokaProfiles 說明 §7（別名 /profile；<必填>、[選填]）"
+    - "*|§e/profiles §7- §b開啟城市通（個人資料，限遊戲內玩家）"
+    - "*|§e/profiles help §7- §b顯示此說明"
+    - "title|§e/profiles title <玩家名稱或 UUID> §7- §b查看該玩家目前的稱號"
+    - "title|§e/profiles title <玩家名稱或 UUID> <稱號> §7- §b設定稱號（可含空白與 § 色碼，最長 ${0} 個字元，不可含控制字元）"
+    - "title|§e/profiles title <玩家名稱或 UUID> clear §7- §b清除稱號"
+    - "title|§7/profiles titles 與 /profiles title 相同；名稱對應到多位玩家時請改用 UUID"
+    - "title|§6§l遷移與盤點工具 §7（在命令列以 java -cp tokaProfiles-<版本>.jar 執行，請先停服）"
+    - "title|§edev.toka.profiles.migration.StagedProfileMigration stage <來源.json> <sqlite|json|yaml> <新stage目錄> [批次筆數 間隔毫秒 [Plan證據.json]] §7- §b背景分批搬遷到獨立資料集，不啟用正式資料"
+    - "title|§edev.toka.profiles.migration.StagedProfileMigration verify <stage目錄> <目前來源.json> <sqlite|json|yaml> §7- §b重啟前驗證 stage 與目前來源一致，不執行切換"
+    - "title|§edev.toka.profiles.migration.ProfileMigration import <來源.json> <sqlite|json|yaml> <新資料目錄> <備份目錄> §7- §b離線一次性匯入並備份、讀回比對"
+    - "title|§edev.toka.profiles.migration.ProfileMigration export-jdbc <jdbc:mysql:網址> <帳號> <輸出.json> §7- §b唯讀匯出 playerData 快照（密碼用 TOKA_DB_PASSWORD 或互動輸入）"
+    - "title|§edev.toka.profiles.migration.ProfileMigration plan-permissions <來源.json> <輸出檔> §7- §b產生未審核的 LuckPerms 身分群組指令提案，不會執行"
+    - "title|§edev.toka.profiles.migration.PlanResolution <來源.json> <Plan證據.json> <新私人目錄> §7- §b離線身分對照與封存輸出，不寫入正式資料"
+    - "title|§7設定檔 staged.*（背景搬遷）與 migration.*（離線匯入）的說明見 config.yml 內的註解"
+
+# ───────────────────────── 玩家／指令訊息（msg） ─────────────────────────
+msg:
+  title:
+    # 查看稱號；${0}＝玩家名稱，${1}＝稱號（沒有時為 status.noTitle）
+    show: "§7[玩家資料]§r §a${0}§b 的稱號：§a${1}"
+    # 清除稱號；${0}＝玩家名稱
+    cleared: "§7[玩家資料]§r §a已清除 ${0} 的稱號"
+    # 設定稱號；${0}＝玩家名稱，${1}＝新稱號
+    set: "§7[玩家資料]§r §a已將 ${0} 的稱號設為：§r${1}"
+
+# ───────────────────────── 錯誤與拒絕（err） ─────────────────────────
+err:
+  noTitlePermission: "§7[玩家資料]§r §c您沒有權限修改稱號。"
+  profilesNotReady: "§7[玩家資料]§r §c玩家資料尚未就緒，稱號未更動。"
+  playerOnly: "§7[玩家資料]§r §c此指令請在遊戲內使用。"
+  # 用法錯誤；${0}＝用法文字（cmd.profiles.usageTitle）
+  usage: "§7[玩家資料]§r §c用法：§e${0}"
+  title:
+    # ${0}＝長度上限
+    tooLong: "§7[玩家資料]§r §c稱號最長 ${0} 個字元"
+    control: "§7[玩家資料]§r §c稱號不能包含控制字元或換行"
+    # 稱號寫入失敗；${0}＝失敗原因（例外訊息或類別名稱）
+    notSaved: "§7[玩家資料]§r §c稱號未儲存：${0}"
+    # ${0}＝輸入的 UUID
+    noUuid: "§7[玩家資料]§r §c找不到這個 UUID 的玩家資料：${0}"
+    # ${0}＝輸入的玩家名稱
+    noPlayer: "§7[玩家資料]§r §c找不到玩家「${0}」的資料"
+    ambiguous: "§7[玩家資料]§r §c「${0}」對應到多筆玩家資料，請改用 UUID"
+  # 以下為啟動與遷移流程的例外訊息（會寫進後台 log，給管理員判讀），不含前綴
+  path:
+    outside: "路徑必須位於插件資料目錄內"
+    symlink: "不接受符號連結"
+  activate:
+    needRefresh: "切換前必須停服並重新匯出來源，再確認來源已更新"
+    saveFailed: "切換設定保存失敗；未開啟新資料集"
+  stage:
+    notIndependent: "搬遷與有效資料目錄必須獨立"
+  import:
+    notConfirmed: "搬遷尚未確認；不建立空白資料"
+    sourceOutside: "來源必須在插件資料目錄內"
+    hashMismatch: "來源雜湊未確認或不符"
+    saveFailed: "匯入完成但設定保存失敗，請人工核對；禁止重複匯入"
+
+# ───────────────────────── 表單與命令列提示（ui） ─────────────────────────
+ui:
+  cityPass:
+    # 城市通表單標題
+    title: "城市通"
+    # 內容；${0}＝玩家名稱，${1}＝識別碼（profileId）。表單內不使用色碼
+    content: "玩家：${0}\n識別碼：${1}"
+    # 找不到玩家資料時的內容
+    noData: "尚未完成玩家資料搬遷。請聯絡管理員。"
+    close: "關閉"
+  # 命令列匯出工具要求輸入資料庫密碼時的提示
+  passwordPrompt: "資料庫密碼："
+
+# ───────────────────────── 後台文字（log） ─────────────────────────
+log:
+  # 啟動完成；${0}＝玩家資料筆數
+  ready: "§btokaProfiles 就緒：§a${0} §b筆玩家資料"
+  storageInitFailed: "§ctokaProfiles 儲存初始化失敗"
+  activationFailed: "§e待啟用資料驗證失敗，繼續使用原資料來源"
+  stagedStopped: "§c背景搬遷停止；有效資料未切換"
+  # ${0}＝搬遷結果摘要（狀態、來源筆數、通過筆數、衝突數…）
+  stagedDone: "§a背景搬遷完成：§b${0}§a；需停服更新來源與確認後才切換"
+  stagedNotStarted: "§c背景搬遷未啟動；有效資料未切換"
+  writerCloseFailed: "§e玩家資料寫入器未能正常關閉"
+  # 寫進 stage 目錄 NOTICE.txt 的內容（給管理員看的檔案，不含色碼）
+  stageNotice: "私人搬遷快照。不可加入 Git。ready 不代表正式資料已切換；線上來源仍須停服後補齊差異。"
+
+# ───────────────────────── 狀態字（status） ─────────────────────────
+status:
+  # 玩家沒有稱號時顯示
+  noTitle: "（沒有）"

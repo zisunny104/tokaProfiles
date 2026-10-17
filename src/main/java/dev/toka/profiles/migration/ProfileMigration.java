@@ -98,7 +98,7 @@ public final class ProfileMigration {
         if(!url.startsWith("jdbc:mysql:")||url.toLowerCase(Locale.ROOT).contains("password="))throw new IllegalArgumentException("Use a MySQL URL without credentials");
         destination=destination.toAbsolutePath().normalize();if(Files.exists(destination))throw new FileAlreadyExistsException(destination.toString());
         String password=System.getenv("TOKA_DB_PASSWORD");
-        if(password==null){var console=System.console();if(console==null)throw new IllegalArgumentException("Provide TOKA_DB_PASSWORD or run from an interactive console");char[] secret=console.readPassword("資料庫密碼：");password=new String(secret);Arrays.fill(secret,'\0');}
+        if(password==null){var console=System.console();if(console==null)throw new IllegalArgumentException("Provide TOKA_DB_PASSWORD or run from an interactive console");char[] secret=console.readPassword(dev.toka.profiles.Texts.get().text("ui.passwordPrompt"));password=new String(secret);Arrays.fill(secret,'\0');}
         JsonArray rows=new JsonArray();
         try(var connection=java.sql.DriverManager.getConnection(url,user,password)) {
             connection.setReadOnly(true);connection.setTransactionIsolation(java.sql.Connection.TRANSACTION_REPEATABLE_READ);connection.setAutoCommit(false);

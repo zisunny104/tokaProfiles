@@ -3,6 +3,8 @@ package dev.toka.profiles.command;
 import dev.toka.profiles.model.Profile;
 import dev.toka.profiles.storage.ProfileRepository;
 
+import dev.toka.profiles.Texts;
+
 import java.util.Arrays;
 import java.util.Set;
 import java.util.UUID;
@@ -28,11 +30,11 @@ public final class TitleAdmin {
      */
     public static String validate(String title) {
         if (title.length() > MAX_LENGTH) {
-            return "稱號最長 " + MAX_LENGTH + " 個字元";
+            return Texts.get().text("err.title.tooLong", MAX_LENGTH);
         }
         for (int i = 0; i < title.length(); i++) {
             if (Character.isISOControl(title.charAt(i))) {
-                return "稱號不能包含控制字元或換行";
+                return Texts.get().text("err.title.control");
             }
         }
         return null;
@@ -44,7 +46,7 @@ public final class TitleAdmin {
      */
     public static CompletableFuture<String> run(ProfileRepository profiles, String[] args) {
         if (args.length == 0) {
-            return CompletableFuture.completedFuture("用法：/profiles title <玩家名稱或 UUID> [稱號 | clear]");
+            return CompletableFuture.completedFuture(Texts.get().text("err.usage", Texts.get().text("cmd.profiles.usageTitle")));
         }
 
         Profile profile;
@@ -57,7 +59,7 @@ public final class TitleAdmin {
         if (args.length == 1) {
             String title = profile.title();
             return CompletableFuture.completedFuture(
-                    profile.name() + " 的稱號：" + (title.isEmpty() ? "（沒有）" : title));
+                    Texts.get().text("msg.title.show", profile.name(), title.isEmpty() ? Texts.get().text("status.noTitle") : title));
         }
 
         String title = String.join(" ", Arrays.copyOfRange(args, 1, args.length)).trim();
@@ -75,32 +77,32 @@ public final class TitleAdmin {
         try {
             return profiles.updateTitle(profile.uuid(), saved).handle((ignored, failure) -> {
                 if (failure != null) {
-                    return "稱號未儲存：" + describe(failure);
+                    return Texts.get().text("err.title.notSaved", describe(failure));
                 }
                 return saved.isEmpty()
-                        ? "已清除 " + profile.name() + " 的稱號"
-                        : "已將 " + profile.name() + " 的稱號設為：" + saved;
+                        ? Texts.get().text("msg.title.cleared", profile.name())
+                        : Texts.get().text("msg.title.set", profile.name(), saved);
             });
         } catch (RuntimeException e) {
-            return CompletableFuture.completedFuture("稱號未儲存：" + describe(e));
+            return CompletableFuture.completedFuture(Texts.get().text("err.title.notSaved", describe(e)));
         }
     }
 
     private static Profile find(ProfileRepository profiles, String who) {
         UUID uuid = parseUuid(who);
         if (uuid != null) {
-            return profiles.find(uuid).orElseThrow(() -> new IllegalArgumentException("找不到這個 UUID 的玩家資料：" + who));
+            return profiles.find(uuid).orElseThrow(() -> new IllegalArgumentException(Texts.get().text("err.title.noUuid", who)));
         }
 
         Set<UUID> candidates = profiles.resolveName(who);
         if (candidates.isEmpty()) {
-            throw new IllegalArgumentException("找不到玩家「" + who + "」的資料");
+            throw new IllegalArgumentException(Texts.get().text("err.title.noPlayer", who));
         }
         if (candidates.size() > 1) {
-            throw new IllegalArgumentException("「" + who + "」對應到多筆玩家資料，請改用 UUID");
+            throw new IllegalArgumentException(Texts.get().text("err.title.ambiguous", who));
         }
         return profiles.find(candidates.iterator().next())
-                .orElseThrow(() -> new IllegalArgumentException("找不到玩家「" + who + "」的資料"));
+                .orElseThrow(() -> new IllegalArgumentException(Texts.get().text("err.title.noPlayer", who)));
     }
 
     private static UUID parseUuid(String value) {
