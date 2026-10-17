@@ -82,9 +82,6 @@ public final class ProfileMigration {
         for(int rank:new int[]{0,1,2,3,4,8}) {
             String group="toka-qx-"+rank;plan.append("lp creategroup ").append(group).append('\n');
             plan.append("lp group ").append(group).append(" parent add toka-player\n");
-
-
-
         }
         for(JsonElement element:rows) {
             JsonObject row=element.getAsJsonObject();int rank=row.get("qx").getAsBigDecimal().intValueExact();

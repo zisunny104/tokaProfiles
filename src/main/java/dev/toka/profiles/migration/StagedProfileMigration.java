@@ -127,7 +127,13 @@ public final class StagedProfileMigration {
     private static void atomicJson(Path path,JsonObject value)throws Exception {
         Path temporary=path.resolveSibling("."+path.getFileName()+"."+UUID.randomUUID());
         Files.writeString(temporary,value.toString(),StandardCharsets.UTF_8,StandardOpenOption.CREATE_NEW);
-        try { Files.move(temporary,path,StandardCopyOption.ATOMIC_MOVE,StandardCopyOption.REPLACE_EXISTING); }
+        try {
+            // Windows refuses to replace a file another process (or a status reader) has open; retry briefly.
+            for(int attempt=0;;attempt++) {
+                try { Files.move(temporary,path,StandardCopyOption.ATOMIC_MOVE,StandardCopyOption.REPLACE_EXISTING); break; }
+                catch(AccessDeniedException busy) { if(attempt>=100)throw busy; Thread.sleep(20); }
+            }
+        }
         finally { Files.deleteIfExists(temporary); }
     }
     private static void privateDirectory(Path directory)throws Exception {

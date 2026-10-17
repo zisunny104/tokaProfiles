@@ -15,10 +15,6 @@
 # ───────────────────────── 指令說明與用法（cmd） ─────────────────────────
 cmd:
   profiles:
-    # 指令簡述
-    desc: "玩家資料與城市通入口；OP 可用 /profiles title 修改稱號"
-    # 總用法
-    usage: "/profiles [help | title <玩家名稱或 UUID> [稱號 | clear]]"
     # /profiles title 的用法
     usageTitle: "/profiles title <玩家名稱或 UUID> [稱號 | clear]"
 
