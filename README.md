@@ -2,7 +2,7 @@
 
 整體拆分現況只維護於 [拆分主文件](https://github.com/zisunny104/zero/blob/master/docs/ARCHITECTURE.md)；本 README 維護本專案的設定、API 與使用限制。
 
-Nukkit 玩家身分、偏好與稱號服務。版本 **0.2.0**，Java 21，預設 SQLite，也支援 JSON／YAML。PM1E 4511 是目前的測試基準，不是唯一適用核心；其他 Nukkit 分支仍須驗證，不宣稱全部相容。
+Nukkit 玩家身分、偏好與稱號服務。版本 **0.2.1**，Java 21，預設 SQLite，也支援 JSON／YAML。PM1E 4511 是目前的測試基準，不是唯一適用核心；其他 Nukkit 分支仍須驗證，不宣稱全部相容。
 
 ## 功能與使用限制
 
@@ -37,8 +37,8 @@ UUID 是主鍵，名稱只是索引。`findByName` 遇歧義回傳 empty；`reso
 來源為唯讀、一致的 playerData JSON 快照：rows 陣列，或 `{schema:1, table:"playerData", rows:[...]}`。上限 64 MiB，盤點仍在記憶體執行；不是任意大小的串流匯入器。
 
 ```text
-java -cp tokaProfiles-0.2.0.jar dev.toka.profiles.migration.StagedProfileMigration stage SOURCE.json sqlite NEW_STAGE 50 100 PLAN_EVIDENCE.json
-java -cp tokaProfiles-0.2.0.jar dev.toka.profiles.migration.StagedProfileMigration verify NEW_STAGE CURRENT_SOURCE.json sqlite
+java -cp tokaProfiles-0.2.1.jar dev.toka.profiles.migration.StagedProfileMigration stage SOURCE.json sqlite NEW_STAGE 50 100 PLAN_EVIDENCE.json
+java -cp tokaProfiles-0.2.1.jar dev.toka.profiles.migration.StagedProfileMigration verify NEW_STAGE CURRENT_SOURCE.json sqlite
 ```
 
 Plan 證據為 `[{"uuid":"UUID","name":"名稱"}]`，最後一個參數可省略。CLI 等待背景 worker，不啟用正式資料。相同 stage 可以續跑；來源、後端或證據變更就換新 stage。
@@ -88,7 +88,7 @@ Profiles 稱號模式依 UUID 讀寫，zero 不再把稱號寫回 SQL；其他�
 
 Main.profiles() 取得 repository。Profile 提供 uuid/name/aliases/preferences/legacyId/title。舊 schema 1 缺 title 時預設空字串。`put` 與 `updateTitle(UUID,String)` 回傳 CompletableFuture；updateTitle 依 writer 最新快照修改，不覆蓋其他欄位。涉及遊戲物件請排回主執行緒，不在玩家事件等待 future。
 
-先安裝同層 tokaStorage，再執行 build.ps1。產物 `output/tokaProfiles-0.2.0.jar`，output 不進版控。Nukkit 核心是 provided dependency，目前編譯基準 PM1E 4511。
+先安裝同層 tokaStorage，再執行 build.ps1。產物 `output/tokaProfiles-0.2.1.jar`，output 不進版控。Nukkit 核心是 provided dependency，目前編譯基準 PM1E 4511。
 
 11 個單元／搬遷測試通過，包含三後端、衝突、Plan 矛盾、稱號、中斷續跑。核心測試驗證三後端稱號轉接、舊 SQL 稱號不變、依賴失效隔離與重啟啟用。Plan 3638／LuckPerms 5.5.87 共同啟動通過，Plan 註冊 LuckPerms extension。
 

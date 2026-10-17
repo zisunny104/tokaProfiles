@@ -29,14 +29,14 @@ cmd:
 # ${0}＝稱號長度上限（目前 255）
 help:
   profiles:
-    - "*|§6§ltokaProfiles 說明 §7（別名 /profile；<必填>、[選填]）"
+    - "*|§6=== §f§ltokaProfiles 說明§r §6=== §7（別名 /profile；<必填>、[選填]）"
     - "*|§e/profiles §7- §b開啟城市通（個人資料，限遊戲內玩家）"
     - "*|§e/profiles help §7- §b顯示此說明"
     - "title|§e/profiles title <玩家名稱或 UUID> §7- §b查看該玩家目前的稱號"
     - "title|§e/profiles title <玩家名稱或 UUID> <稱號> §7- §b設定稱號（可含空白與 § 色碼，最長 ${0} 個字元，不可含控制字元）"
     - "title|§e/profiles title <玩家名稱或 UUID> clear §7- §b清除稱號"
-    - "title|§7/profiles titles 與 /profiles title 相同；名稱對應到多位玩家時請改用 UUID"
-    - "title|§6§l遷移與盤點工具 §7（在命令列以 java -cp tokaProfiles-<版本>.jar 執行，請先停服）"
+    - "title|§7/profiles titles 與 /profiles title 相同；名稱對應多位玩家時用 UUID"
+    - "title|§6§l遷移與盤點工具 §7（命令列 java -cp tokaProfiles-<版本>.jar 執行，需先停服）"
     - "title|§edev.toka.profiles.migration.StagedProfileMigration stage <來源.json> <sqlite|json|yaml> <新stage目錄> [批次筆數 間隔毫秒 [Plan證據.json]] §7- §b背景分批搬遷到獨立資料集，不啟用正式資料"
     - "title|§edev.toka.profiles.migration.StagedProfileMigration verify <stage目錄> <目前來源.json> <sqlite|json|yaml> §7- §b重啟前驗證 stage 與目前來源一致，不執行切換"
     - "title|§edev.toka.profiles.migration.ProfileMigration import <來源.json> <sqlite|json|yaml> <新資料目錄> <備份目錄> §7- §b離線一次性匯入並備份、讀回比對"
@@ -59,7 +59,7 @@ msg:
 err:
   noTitlePermission: "§7[玩家資料]§r §c您沒有權限修改稱號。"
   profilesNotReady: "§7[玩家資料]§r §c玩家資料尚未就緒，稱號未更動。"
-  playerOnly: "§7[玩家資料]§r §c此指令請在遊戲內使用。"
+  playerOnly: "§7[玩家資料]§r §c此指令只能在遊戲內使用。"
   # 用法錯誤；${0}＝用法文字（cmd.profiles.usageTitle）
   usage: "§7[玩家資料]§r §c用法：§e${0}"
   title:
@@ -72,7 +72,7 @@ err:
     noUuid: "§7[玩家資料]§r §c找不到這個 UUID 的玩家資料：${0}"
     # ${0}＝輸入的玩家名稱
     noPlayer: "§7[玩家資料]§r §c找不到玩家「${0}」的資料"
-    ambiguous: "§7[玩家資料]§r §c「${0}」對應到多筆玩家資料，請改用 UUID"
+    ambiguous: "§7[玩家資料]§r §c「${0}」對應到多筆玩家資料，需改用 UUID"
   # 以下為啟動與遷移流程的例外訊息（會寫進後台 log，給管理員判讀），不含前綴
   path:
     outside: "路徑必須位於插件資料目錄內"
@@ -86,7 +86,7 @@ err:
     notConfirmed: "搬遷尚未確認；不建立空白資料"
     sourceOutside: "來源必須在插件資料目錄內"
     hashMismatch: "來源雜湊未確認或不符"
-    saveFailed: "匯入完成但設定保存失敗，請人工核對；禁止重複匯入"
+    saveFailed: "匯入完成但設定保存失敗，需人工核對，不可重複匯入"
 
 # ───────────────────────── 表單與命令列提示（ui） ─────────────────────────
 ui:
@@ -96,7 +96,7 @@ ui:
     # 內容；${0}＝玩家名稱，${1}＝識別碼（profileId）。表單內不使用色碼
     content: "玩家：${0}\n識別碼：${1}"
     # 找不到玩家資料時的內容
-    noData: "尚未完成玩家資料搬遷。請聯絡管理員。"
+    noData: "尚未完成玩家資料搬遷。"
     close: "關閉"
   # 命令列匯出工具要求輸入資料庫密碼時的提示
   passwordPrompt: "資料庫密碼："
