@@ -1,9 +1,10 @@
 name: tokaProfiles
 main: dev.toka.profiles.Main
-version: 0.2.2
+version: 0.2.3
 api: ["1.0.0"]
 author: zisunny104
 load: STARTUP
+softdepend: [Plan]
 description: Nukkit 玩家身分、偏好與稱號服務，並提供背景分批資料搬遷
 commands:
   profiles:
@@ -17,4 +18,9 @@ permissions:
     default: true
   tokaProfiles.title.admin:
     description: 查看與修改玩家稱號（/profiles title）
+    default: op
+
+
+  tokaProfiles.admin:
+    description: 管理 Plan 展示設定
     default: op

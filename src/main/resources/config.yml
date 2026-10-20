@@ -51,3 +51,8 @@ migration:
   source-sha256: ""
   # 最後確認。可填：true、false；匯入後插件會自動改回 false，避免重複匯入。
   confirm: false
+
+# 選用 Plan 展示。預設 auto／all；使用管理指令即時切換。
+plan:
+  mode: auto # auto 自動偵測；enable 未就緒時提示；disable 不發布。
+  fields: all # all | none | 欄位清單；指令可逐項管理。

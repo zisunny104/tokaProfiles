@@ -67,3 +67,18 @@
 - **用名稱設定稱號失敗？** 可能有多位玩家同名，請改用 UUID。
 
 目前版本 0.2.2
+
+### Plan 選用整合（0.2.3）
+
+預設自動接入 Plan，提供 `exists`（玩家資料是否存在）、`title`（稱號）、`count`（全服正式資料筆數）；可用 `plan.fields` 選擇欄位或全部關閉。只讀目前啟用的 ProfileRepository，不讀 staging、搬遷名單、legacy ID、別名或玩家偏好，不作身分判定。Plan Provider 讀 volatile immutable index，不等待儲存、不讀世界或玩家物件。資料庫不就緒時回傳 NotReady，避免虛構空資料。
+
+使用官方 Plan API5.7-R0.2 provided，核對 Plan5.8 build3638 支援 Builder API；未安裝/停用/能力不足時略過，Plan 啟用停用及插件卸載會註冊/清除整合。Plan 模式與欄位可用下列管理指令即時套用。語系欄位在 `plan`，走 tokaI18n。Plan 網頁閱覽權限及已保存資料由 Plan 管理；停用欄位或更改標籤不會自動刪除 Plan 的歷史資料。
+
+
+### Plan 模式與管理指令
+
+預設 `plan.mode: auto`、`plan.fields: all`。`auto` 偵測到可用 Plan 就啟用；`enable` 未就緒時提示；`disable` 一定不發布。all 僅包含本插件核准的摘要欄位，沒有憑證、Discord ID 或私人座標。
+
+管理員可用 `/profiles plan status`、`/profiles plan mode <auto|enable|disable>`、`/profiles plan fields <all|none|欄位...>`；變更保存設定且即時套用，保留其他設定及註解。舊 `plan.enabled`／逐項布林仍相容，明確設定的新 mode／fields 優先。
+
+API（主執行緒）：`planStatusJson()`、`configurePlan(String mode, String[] fields)`；null 表示該項沿用。

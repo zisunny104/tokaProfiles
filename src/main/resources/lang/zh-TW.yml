@@ -115,3 +115,17 @@ log:
 status:
   # 玩家沒有稱號時顯示
   noTitle: "（沒有）"
+
+plan:
+  missing: '已要求啟用 Plan，但 Plan 尚未就緒；/${0} plan mode auto 可改為自動偵測。'
+  detected: '已偵測到 Plan，目前模式 ${0}；/${1} plan status 可查看設定。'
+  configureFailed: 'Plan 設定未完成：${0}。'
+  noPermission: '§c沒有管理 Plan 展示的權限。'
+  configured: '§aPlan 設定已儲存；/${0} plan status 可查看。'
+  usage: '§e/${0} plan status | mode <auto|enable|disable> | fields <all|none|欄位...>'
+  exists: '已有玩家資料'
+  title: '玩家稱號'
+  count: '正式玩家資料筆數'
+  ready: 'Plan 玩家資訊整合已啟用。'
+  unsupported: 'Plan 缺少 DataExtension Builder API，已略過玩家資訊整合。'
+  unavailable: 'Plan 玩家資訊整合暫時不可用：${0}'

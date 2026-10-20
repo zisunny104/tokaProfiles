@@ -7,11 +7,13 @@ import cn.nukkit.command.*;
 import cn.nukkit.form.window.FormWindowSimple;
 import cn.nukkit.form.element.ElementButton;
 import dev.toka.i18n.Messages;
-public final class Main extends PluginBase {
+public final class Main extends PluginBase implements cn.nukkit.event.Listener {
  private ProfileRepository profiles;
  private java.util.concurrent.CompletableFuture<?> migration;
  private Messages messages;
- @Override public void onEnable(){saveDefaultConfig();messages=new Messages(getClass().getClassLoader(),getDataFolder().toPath(),getConfig().getString("language","zh-TW"),line->getLogger().warning(line));Texts.use(messages);try{Backend backend=Backend.valueOf(getConfig().getString("storage.backend","sqlite").toUpperCase(java.util.Locale.ROOT));prepareMigration(backend);var active=localPath(getConfig().getString("storage.active-directory","storage"));try{active=activationPath(backend);}catch(Exception error){getLogger().error(messages.text("log.activationFailed"),error);}profiles=ProfileRepository.open(new StoreConfig(backend,active,1),getConfig().getInt("storage.queue-capacity",128));getLogger().info(messages.text("log.ready",profiles.snapshot().size()));startStaging(backend);}catch(Exception e){getLogger().error(messages.text("log.storageInitFailed"),e);getServer().getPluginManager().disablePlugin(this);}}
+ private AutoCloseable plan;
+ private dev.toka.profiles.plan.PlanControl planControl;
+ @Override public void onEnable(){saveDefaultConfig();messages=new Messages(getClass().getClassLoader(),getDataFolder().toPath(),getConfig().getString("language","zh-TW"),line->getLogger().warning(line));Texts.use(messages);try{Backend backend=Backend.valueOf(getConfig().getString("storage.backend","sqlite").toUpperCase(java.util.Locale.ROOT));prepareMigration(backend);var active=localPath(getConfig().getString("storage.active-directory","storage"));try{active=activationPath(backend);}catch(Exception error){getLogger().error(messages.text("log.activationFailed"),error);}profiles=ProfileRepository.open(new StoreConfig(backend,active,1),getConfig().getInt("storage.queue-capacity",128));getLogger().info(messages.text("log.ready",profiles.snapshot().size()));startStaging(backend);getServer().getPluginManager().registerEvents(this,this);refreshPlan();}catch(Exception e){getLogger().error(messages.text("log.storageInitFailed"),e);getServer().getPluginManager().disablePlugin(this);}}
  private java.nio.file.Path localPath(String value){var root=getDataFolder().toPath().toAbsolutePath().normalize();var path=root.resolve(value).normalize();if(path.equals(root)||!path.startsWith(root))throw new IllegalArgumentException(messages.text("err.path.outside"));for(var p=path;p!=null&&p.startsWith(root);p=p.getParent())if(java.nio.file.Files.isSymbolicLink(p))throw new IllegalArgumentException(messages.text("err.path.symlink"));return path;}
  private java.nio.file.Path activationPath(Backend backend)throws Exception {
   var active=localPath(getConfig().getString("storage.active-directory","storage"));
@@ -59,6 +61,7 @@ public final class Main extends PluginBase {
  public ProfileRepository profiles(){if(profiles==null||profiles.state()!=ProfileRepository.State.READY)throw new IllegalStateException("Profiles unavailable");return profiles;}
  public void openCityPass(Player player){var profile=profiles().find(player.getUniqueId());String content=profile.map(p->messages.text("ui.cityPass.content",p.name(),p.profileId())).orElse(messages.text("ui.cityPass.noData"));var form=new FormWindowSimple(messages.text("ui.cityPass.title"),content);form.addButton(new ElementButton(messages.text("ui.cityPass.close")));player.showFormWindow(form,21080000);}
  @Override public boolean onCommand(CommandSender sender,Command command,String label,String[] args){
+  if(planControl!=null&&planControl.command(sender,args,"tokaProfiles.admin"))return true;
   if(args.length>0&&args[0].equalsIgnoreCase("help")){sendHelp(sender);return true;}
   if(args.length>0&&(args[0].equalsIgnoreCase("title")||args[0].equalsIgnoreCase("titles"))){
    if(!sender.hasPermission(dev.toka.profiles.command.TitleAdmin.PERMISSION)){sender.sendMessage(messages.text("err.noTitlePermission"));return true;}
@@ -67,5 +70,16 @@ public final class Main extends PluginBase {
    return true;
   }
   if(!(sender instanceof Player player)){sender.sendMessage(messages.text("err.playerOnly"));return true;}if(!sender.hasPermission("tokaProfiles.self"))return false;openCityPass(player);return true;}
- @Override public void onDisable(){if(migration!=null&&!migration.isDone())migration.cancel(true);if(profiles!=null)try{profiles.close();}catch(Exception e){getLogger().error(messages.text("log.writerCloseFailed"),e);}}
+ @Override public void onDisable(){closePlan();if(migration!=null&&!migration.isDone())migration.cancel(true);if(profiles!=null)try{profiles.close();}catch(Exception e){getLogger().error(messages.text("log.writerCloseFailed"),e);}}
+ private void closePlan(){if(planControl!=null)planControl.registered(false);if(plan!=null)try{plan.close();}catch(Exception|LinkageError e){getLogger().warning(messages.text("plan.unavailable",e.getClass().getSimpleName()));}finally{plan=null;}}
+ private void refreshPlan(){closePlan();
+  if(planControl==null)planControl=new dev.toka.profiles.plan.PlanControl(this,this::refreshPlan,()->java.util.Set.of("exists","title","count"),(key,args)->messages.text(key,args),"profiles");var plugin=getServer().getPluginManager().getPlugin("Plan");
+  if(profiles==null||!planControl.shouldRegister())return;
+  try{var fields=new java.util.HashSet<String>();for(String key:java.util.List.of("exists","title","count"))if(planControl.options().has(key))fields.add(key);
+   var extension=new dev.toka.profiles.plan.PlanExtension(profiles,fields,key->messages.text(key));
+   if(extension.register()){plan=extension;planControl.registered(true);getLogger().info(messages.text("plan.ready"));}else getLogger().warning(messages.text("plan.unsupported"));
+  }catch(RuntimeException|LinkageError e){getLogger().warning(messages.text("plan.unavailable",e.getClass().getSimpleName()));}}
+ @cn.nukkit.event.EventHandler public void planEnable(cn.nukkit.event.plugin.PluginEnableEvent e){if("Plan".equals(e.getPlugin().getName()))refreshPlan();}
+ @cn.nukkit.event.EventHandler public void planDisable(cn.nukkit.event.plugin.PluginDisableEvent e){if("Plan".equals(e.getPlugin().getName()))closePlan();} public String planStatusJson(){return planControl.statusJson();}
+ public boolean configurePlan(String mode,String[] fields){return planControl.configure(mode,fields);}
 }
