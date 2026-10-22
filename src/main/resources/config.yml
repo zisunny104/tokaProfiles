@@ -56,3 +56,7 @@ migration:
 plan:
   mode: auto # auto 自動偵測；enable 未就緒時提示；disable 不發布。
   fields: all # all | none | 欄位清單；指令可逐項管理。
+
+# 名稱標籤中，稱號後面接的分隔文字（需要 tokaDisplay 0.4.0 以上）。沒有稱號就不顯示。
+nametag:
+  title-suffix: "§6-"
