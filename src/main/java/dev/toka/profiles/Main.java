@@ -4,6 +4,8 @@ import dev.toka.profiles.storage.ProfileRepository;
 import dev.toka.storage.*;
 import cn.nukkit.Player;
 import cn.nukkit.command.*;
+import cn.nukkit.command.data.CommandParameter;
+import cn.nukkit.command.data.CommandParamType;
 import cn.nukkit.form.window.FormWindowSimple;
 import cn.nukkit.form.element.ElementButton;
 import dev.toka.i18n.Messages;
@@ -13,7 +15,14 @@ public final class Main extends PluginBase implements cn.nukkit.event.Listener {
  private Messages messages;
  private AutoCloseable plan;
  private dev.toka.profiles.plan.PlanControl planControl;
- @Override public void onEnable(){saveDefaultConfig();messages=new Messages(getClass().getClassLoader(),getDataFolder().toPath(),getConfig().getString("language","zh-TW"),line->getLogger().warning(line));Texts.use(messages);try{Backend backend=Backend.valueOf(getConfig().getString("storage.backend","sqlite").toUpperCase(java.util.Locale.ROOT));prepareMigration(backend);var active=localPath(getConfig().getString("storage.active-directory","storage"));try{active=activationPath(backend);}catch(Exception error){getLogger().error(messages.text("log.activationFailed"),error);}profiles=ProfileRepository.open(new StoreConfig(backend,active,1),getConfig().getInt("storage.queue-capacity",128));getLogger().info(messages.text("log.ready",profiles.snapshot().size()));startStaging(backend);getServer().getPluginManager().registerEvents(this,this);refreshPlan();}catch(Exception e){getLogger().error(messages.text("log.storageInitFailed"),e);getServer().getPluginManager().disablePlugin(this);}}
+ @Override public void onEnable(){saveDefaultConfig();suggest("profiles",
+  new CommandParameter[]{CommandParameter.newEnum("動作",new String[]{"help"})},
+  new CommandParameter[]{CommandParameter.newEnum("動作",new String[]{"title","titles"})},
+  new CommandParameter[]{CommandParameter.newEnum("動作",new String[]{"title","titles"}),CommandParameter.newType("玩家或UUID",CommandParamType.STRING)},
+  new CommandParameter[]{CommandParameter.newEnum("動作",new String[]{"title","titles"}),CommandParameter.newType("玩家或UUID",CommandParamType.STRING),CommandParameter.newEnum("稱號",new String[]{"clear"})},
+  new CommandParameter[]{CommandParameter.newEnum("動作",new String[]{"title","titles"}),CommandParameter.newType("玩家或UUID",CommandParamType.STRING),CommandParameter.newType("稱號",CommandParamType.RAWTEXT)});
+  messages=new Messages(getClass().getClassLoader(),getDataFolder().toPath(),getConfig().getString("language","zh-TW"),line->getLogger().warning(line));Texts.use(messages);try{Backend backend=Backend.valueOf(getConfig().getString("storage.backend","sqlite").toUpperCase(java.util.Locale.ROOT));prepareMigration(backend);var active=localPath(getConfig().getString("storage.active-directory","storage"));try{active=activationPath(backend);}catch(Exception error){getLogger().error(messages.text("log.activationFailed"),error);}profiles=ProfileRepository.open(new StoreConfig(backend,active,1),getConfig().getInt("storage.queue-capacity",128));getLogger().info(messages.text("log.ready",profiles.snapshot().size()));startStaging(backend);getServer().getPluginManager().registerEvents(this,this);refreshPlan();}catch(Exception e){getLogger().error(messages.text("log.storageInitFailed"),e);getServer().getPluginManager().disablePlugin(this);}}
+ private void suggest(String name,CommandParameter[]... forms){Command registered=(Command)getCommand(name);if(registered==null)return;registered.getCommandParameters().clear();for(int i=0;i<forms.length;i++)registered.addCommandParameters("choice"+i,forms[i]);}
  private java.nio.file.Path localPath(String value){var root=getDataFolder().toPath().toAbsolutePath().normalize();var path=root.resolve(value).normalize();if(path.equals(root)||!path.startsWith(root))throw new IllegalArgumentException(messages.text("err.path.outside"));for(var p=path;p!=null&&p.startsWith(root);p=p.getParent())if(java.nio.file.Files.isSymbolicLink(p))throw new IllegalArgumentException(messages.text("err.path.symlink"));return path;}
  private java.nio.file.Path activationPath(Backend backend)throws Exception {
   var active=localPath(getConfig().getString("storage.active-directory","storage"));
