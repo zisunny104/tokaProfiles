@@ -60,3 +60,13 @@ plan:
 # 名稱標籤中，稱號後面接的分隔文字（需要 tokaDisplay 0.4.0 以上）。沒有稱號就不顯示。
 nametag:
   title-suffix: "§6-"
+
+# 玩家自己修改稱號（/profiles mytitle，需要權限 tokaProfiles.title.self，預設只有身分組被授予的人）。
+title:
+  self:
+    # 稱號最長幾個字（不含色碼）。
+    max-length: 16
+    # 兩次修改之間要等幾秒；有 tokaProfiles.title.admin 的人不受限。
+    cooldown-seconds: 300
+    # 不允許的用詞（不分大小寫，比對時忽略空白與色碼）。
+    blocked-words: []

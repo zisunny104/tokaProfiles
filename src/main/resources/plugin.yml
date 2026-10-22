@@ -9,13 +9,19 @@ description: Nukkit 玩家身分、偏好與稱號服務，並提供背景分批
 commands:
   profiles:
     description: 玩家資料與城市通入口；OP 可用 /profiles title 修改稱號
-    usage: "/profiles [help | title|titles <玩家名稱或 UUID> [稱號 | clear]]（/profiles help 查看完整說明）"
+    usage: "/profiles [help | mytitle [稱號 | clear] | title|titles <玩家名稱或 UUID> [稱號 | clear]]（/profiles help 查看完整說明）"
     aliases: [profile]
     permission: tokaProfiles.self
 permissions:
   tokaProfiles.self:
     description: 開啟城市通並查看個人資料（/profiles、/profiles help）
     default: true
+  tokaProfiles.title.self:
+    description: 修改自己的稱號（/profiles mytitle）；預設關閉，由身分組授予
+    default: false
+  tokaProfiles.title.color:
+    description: 自己的稱號可以使用色碼
+    default: false
   tokaProfiles.title.admin:
     description: 查看與修改玩家稱號（/profiles title）
     default: op

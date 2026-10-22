@@ -14,6 +14,7 @@ public final class Main extends PluginBase implements cn.nukkit.event.Listener {
  private java.util.concurrent.CompletableFuture<?> migration;
  private Messages messages;
  private AutoCloseable plan;
+ private final dev.toka.profiles.command.SelfTitle selfTitle=new dev.toka.profiles.command.SelfTitle();
  private dev.toka.profiles.plan.PlanControl planControl;
  @Override public void onEnable(){saveDefaultConfig();suggest("profiles",
   new CommandParameter[]{CommandParameter.newEnum("動作",new String[]{"help"})},
@@ -65,7 +66,7 @@ public final class Main extends PluginBase implements cn.nukkit.event.Listener {
   for(String line:messages.lines("help.profiles",dev.toka.profiles.command.TitleAdmin.MAX_LENGTH)){
    int bar=line.indexOf('|');if(bar<0){sender.sendMessage(line);continue;}
    String tag=line.substring(0,bar);
-   if(tag.equals("*")||(tag.equals("title")&&sender.hasPermission(dev.toka.profiles.command.TitleAdmin.PERMISSION)))sender.sendMessage(line.substring(bar+1));
+   if(tag.equals("*")||(tag.equals("title")&&sender.hasPermission(dev.toka.profiles.command.TitleAdmin.PERMISSION))||(tag.equals("self")&&sender.hasPermission(dev.toka.profiles.command.SelfTitle.PERMISSION)))sender.sendMessage(line.substring(bar+1));
   }
  }
  public ProfileRepository profiles(){if(profiles==null||profiles.state()!=ProfileRepository.State.READY)throw new IllegalStateException("Profiles unavailable");return profiles;}
@@ -77,6 +78,15 @@ public final class Main extends PluginBase implements cn.nukkit.event.Listener {
    if(!sender.hasPermission(dev.toka.profiles.command.TitleAdmin.PERMISSION)){sender.sendMessage(messages.text("err.noTitlePermission"));return true;}
    ProfileRepository repository;try{repository=profiles();}catch(IllegalStateException e){sender.sendMessage(messages.text("err.profilesNotReady"));return true;}
    dev.toka.profiles.command.TitleAdmin.run(repository,java.util.Arrays.copyOfRange(args,1,args.length)).whenComplete((message,failure)->getServer().getScheduler().scheduleTask(this,()->sender.sendMessage(failure==null?message:messages.text("err.title.notSaved",failure.getMessage()))));
+   return true;
+  }
+  if(args.length>0&&args[0].equalsIgnoreCase("mytitle")){
+   if(!(sender instanceof Player self)){sender.sendMessage(messages.text("err.playerOnly"));return true;}
+   if(!sender.hasPermission(dev.toka.profiles.command.SelfTitle.PERMISSION)){sender.sendMessage(messages.text("err.noTitlePermission"));return true;}
+   ProfileRepository repository;try{repository=profiles();}catch(IllegalStateException e){sender.sendMessage(messages.text("err.profilesNotReady"));return true;}
+   var rules=new dev.toka.profiles.command.SelfTitle.Rules(getConfig().getInt("title.self.max-length",16),getConfig().getInt("title.self.cooldown-seconds",300)*1000L,getConfig().getStringList("title.self.blocked-words"));
+   selfTitle.run(repository,self.getUniqueId(),sender.hasPermission(dev.toka.profiles.command.SelfTitle.COLOR_PERMISSION),sender.hasPermission(dev.toka.profiles.command.TitleAdmin.PERMISSION),java.util.Arrays.copyOfRange(args,1,args.length),rules,System.currentTimeMillis())
+    .whenComplete((message,failure)->getServer().getScheduler().scheduleTask(this,()->sender.sendMessage(failure==null?message:messages.text("err.title.notSaved",failure.getMessage()))));
    return true;
   }
   if(!(sender instanceof Player player)){sender.sendMessage(messages.text("err.playerOnly"));return true;}if(!sender.hasPermission("tokaProfiles.self"))return false;openCityPass(player);return true;}

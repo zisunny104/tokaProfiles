@@ -22,12 +22,16 @@ cmd:
 # help.profiles：每行格式為「標籤|內容」，依權限過濾後顯示（標籤與 | 不會顯示）：
 #   *       所有人都顯示
 #   title   需要 tokaProfiles.title.admin 權限
+#   self    需要 tokaProfiles.title.self 權限
 # ${0}＝稱號長度上限（目前 255）
 help:
   profiles:
     - "*|§6=== §f§ltokaProfiles 說明§r §6=== §7（別名 /profile；<必填>、[選填]）"
     - "*|§e/profiles §7- §b開啟城市通（個人資料，限遊戲內玩家）"
     - "*|§e/profiles help §7- §b顯示此說明"
+    - "self|§e/profiles mytitle §7- §b查看自己的稱號"
+    - "self|§e/profiles mytitle <稱號> §7- §b設定自己的稱號（有長度限制與等待時間；色碼需要另外的權限，用 & 代替 §）"
+    - "self|§e/profiles mytitle clear §7- §b清除自己的稱號"
     - "title|§e/profiles title <玩家名稱或 UUID> §7- §b查看該玩家目前的稱號"
     - "title|§e/profiles title <玩家名稱或 UUID> <稱號> §7- §b設定稱號（可含空白與 § 色碼，最長 ${0} 個字元，不可含控制字元）"
     - "title|§e/profiles title <玩家名稱或 UUID> clear §7- §b清除稱號"
@@ -48,6 +52,11 @@ msg:
     show: "§7[玩家資料]§r §a${0}§b 的稱號：§a${1}"
     # 清除稱號；${0}＝玩家名稱
     cleared: "§7[玩家資料]§r §a已清除 ${0} 的稱號"
+    # 自己的稱號；${0}＝稱號（沒有時為 status.noTitle）
+    mine: "§7[玩家資料]§r §b你的稱號：§a${0}"
+    mineCleared: "§7[玩家資料]§r §a已清除你的稱號"
+    # ${0}＝新稱號
+    mineSet: "§7[玩家資料]§r §a你的稱號已設為：§r${0}"
     # 設定稱號；${0}＝玩家名稱，${1}＝新稱號
     set: "§7[玩家資料]§r §a已將 ${0} 的稱號設為：§r${1}"
 
@@ -62,6 +71,14 @@ err:
     # ${0}＝長度上限
     tooLong: "§7[玩家資料]§r §c稱號最長 ${0} 個字元"
     control: "§7[玩家資料]§r §c稱號不能包含控制字元或換行"
+    selfNoProfile: "§7[玩家資料]§r §c找不到你的玩家資料，稱號未更動。"
+    selfColour: "§7[玩家資料]§r §c你沒有使用色碼的權限，稱號不能含 § 或 &。"
+    selfBlank: "§7[玩家資料]§r §c稱號不能是空白；要移除請用 clear。"
+    # ${0}＝長度上限（不含色碼）
+    selfLong: "§7[玩家資料]§r §c稱號最長 ${0} 個字（不含色碼）"
+    selfBlocked: "§7[玩家資料]§r §c稱號含有不允許的用詞。"
+    # ${0}＝還要等幾秒
+    selfWait: "§7[玩家資料]§r §e稱號剛改過，請再等 ${0} 秒。"
     # 稱號寫入失敗；${0}＝失敗原因（例外訊息或類別名稱）
     notSaved: "§7[玩家資料]§r §c稱號未儲存：${0}"
     # ${0}＝輸入的 UUID

@@ -50,7 +50,7 @@ public class LangFileTest {
             int bar = line.indexOf('|');
             assertTrue("untagged help line: " + line, bar > 0);
             String tag = line.substring(0, bar);
-            assertTrue("unknown tag " + tag, tag.equals("*") || tag.equals("title"));
+            assertTrue("unknown tag " + tag, tag.equals("*") || tag.equals("title") || tag.equals("self"));
         }
     }
 
