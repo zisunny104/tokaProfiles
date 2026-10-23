@@ -85,21 +85,18 @@ public final class Main extends PluginBase implements cn.nukkit.event.Listener {
   }catch(RuntimeException unavailable){/* the next login records it */}
  }
  @cn.nukkit.event.EventHandler(priority=cn.nukkit.event.EventPriority.MONITOR) public void left(cn.nukkit.event.player.PlayerQuitEvent e){if(inheritance!=null&&profiles!=null)rememberIdentity(e.getPlayer());}
- /** /profiles donation <player or UUID> <amount> [text]: adds a donation to the note; tokaRewards gives the reward for it. */
- private void donationCommand(CommandSender sender,String[] args){
-  if(!sender.hasPermission("tokaProfiles.note")){sender.sendMessage(messages.text("err.noNotePermission"));return;}
-  ProfileRepository repository;try{repository=profiles();}catch(IllegalStateException e){sender.sendMessage(messages.text("err.profilesNotReady"));return;}
-  if(args.length<3){sender.sendMessage(messages.text("note.donationUsage"));return;}
-  java.util.Optional<dev.toka.profiles.model.Profile> found;
-  try{found=repository.find(java.util.UUID.fromString(args[1]));}catch(IllegalArgumentException notUuid){found=repository.findByName(args[1]);}
-  if(found.isEmpty()){sender.sendMessage(messages.text("err.legacy.noPlayer"));return;}
-  long amount;try{amount=Long.parseLong(args[2]);if(amount<1||amount>100000000)throw new NumberFormatException();}catch(NumberFormatException bad){sender.sendMessage(messages.text("note.donationUsage"));return;}
-  var now=java.time.LocalDateTime.now();
-  String text=args.length>3?String.join(" ",java.util.Arrays.copyOfRange(args,3,args.length)):"";
-  String line=new Notes.Entry("donation",new java.util.LinkedHashMap<>(java.util.Map.of("amount",Long.toString(amount),"id",now.format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMddHHmmss")),"date",now.format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd")))),text.replace("\n"," ")).line();
-  var profile=found.get();String note=Notes.append(profile.preferences().getOrDefault("note",""),line);
-  if(note.length()>1000){sender.sendMessage(messages.text("note.tooLong"));return;}
-  repository.put(profile.withPreference("note",note)).whenComplete((done,failure)->getServer().getScheduler().scheduleTask(this,()->sender.sendMessage(failure==null?messages.text("note.donationSaved",profile.name(),amount):String.valueOf(failure))));
+ /**
+  * Adds a line to a player's note (an entry such as "donation amount=500 id=x", or plain text). For plugins that keep a record there,
+  * by reflection; false when the player has no profile, the line is empty or the note would get too long.
+  */
+ public static java.util.concurrent.CompletableFuture<Boolean> appendNote(java.util.UUID uuid,String line){
+  var self=running;
+  if(self==null||self.profiles==null||line==null||line.isBlank())return java.util.concurrent.CompletableFuture.completedFuture(false);
+  var found=self.profiles.find(uuid);
+  if(found.isEmpty())return java.util.concurrent.CompletableFuture.completedFuture(false);
+  String note=Notes.append(found.get().preferences().getOrDefault("note",""),line.strip().replace("\n"," "));
+  if(note.length()>1000)return java.util.concurrent.CompletableFuture.completedFuture(false);
+  return self.profiles.put(found.get().withPreference("note",note)).thenApply(done->true);
  }
  /** Notes written as plain text by an earlier version are rewritten as entries. */
  private void modernizeNotes(){
@@ -186,7 +183,6 @@ public final class Main extends PluginBase implements cn.nukkit.event.Listener {
   if(args.length>0&&args[0].equalsIgnoreCase("help")){sendHelp(sender);return true;}
   if(args.length>0&&args[0].equalsIgnoreCase("legacy")){legacyCommand(sender,args);return true;}
   if(args.length>0&&args[0].equalsIgnoreCase("note")){noteCommand(sender,args);return true;}
-  if(args.length>0&&args[0].equalsIgnoreCase("donation")){donationCommand(sender,args);return true;}
   if(args.length>0&&(args[0].equalsIgnoreCase("title")||args[0].equalsIgnoreCase("titles"))){
    if(!sender.hasPermission(dev.toka.profiles.command.TitleAdmin.PERMISSION)){sender.sendMessage(messages.text("err.noTitlePermission"));return true;}
    ProfileRepository repository;try{repository=profiles();}catch(IllegalStateException e){sender.sendMessage(messages.text("err.profilesNotReady"));return true;}
