@@ -151,7 +151,10 @@ welcome:
 銀幣是主要貨幣，金幣來自贊助和活動。要蓋房子先買領地：用木鋤破壞與點擊選出對角，再輸入 /land set <領地名稱>，/land tpl 設傳送點。
 
 §e>>綁定 Discord§r
-到我們的 Discord 完成綁定，就能在 Discord 和遊戲裡一起聊天、用指令，也是進服的資格。還沒綁定的話，記得去綁一下。
+綁定 Discord 是進服的資格，綁定後也能在 Discord 和遊戲裡互通聊天、使用指令。三步完成：
+1. 在遊戲輸入 §b/discord link§r，會得到一組綁定代碼
+2. 到我們的 Discord，輸入 §b/link code:你的代碼§r
+3. 看到「綁定完成」就好了；代碼只能用一次，不要給別人
 
 §e>>遊玩公約§r
 ‧ 和平都是生存地圖，領地是立體的，範圍包含高度
@@ -226,7 +229,8 @@ citypass:
       label: "個人與 Discord"
       title: "個人與 Discord"
       body: "城市通的「資料管理」可以看到名稱、稱號、戶籍與身分，稱號可以自己改。
-綁定 Discord 後能在 Discord 與遊戲裡一起聊天、用指令，也是進服的資格。"
+綁定 Discord 是進服的資格，也能在 Discord 與遊戲裡互通聊天、用指令。
+綁定：遊戲輸入 /discord link 取得代碼，再到 Discord 輸入 /link code:代碼。"
     rules:
       label: "遊玩公約"
       title: "遊玩公約"
