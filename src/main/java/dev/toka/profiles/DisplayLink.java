@@ -17,27 +17,35 @@ final class DisplayLink {
         return title == null || title.isEmpty() ? "" : title + suffix;
     }
 
+    /** The identities an ordinary player can carry on top of being one, in the order their tags are shown. */
+    private static final java.util.List<String> EXTRAS = java.util.List.of("sponsor", "linked");
+
     /**
-     * The identity tags in front of a name: the tag of each identity the player has (administrator, sponsor, linked), in that order, or
-     * the ordinary tag when they have none. A tag brings its own brackets and colour; a blank tag is not shown. Identities are
-     * permission nodes, so no group is looked at.
+     * Who a player is: there are two kinds, an administrator, or an ordinary player who may carry extra identities (sponsor, linked
+     * Discord). The extras belong to ordinary players only, so an administrator is just "admin". Identities are permission nodes; no
+     * group is looked at. An empty list is a plain ordinary player.
+     */
+    static java.util.List<String> identityIds(java.util.function.Predicate<String> has) {
+        if (has.test("toka.identity.admin")) return java.util.List.of("admin");
+        var found = new java.util.ArrayList<String>();
+        for (String id : EXTRAS) if (has.test("toka.identity." + id)) found.add(id);
+        return found;
+    }
+
+    /**
+     * The tags in front of a name: those of the player's identities, or the ordinary tag when none of them has a tag to show. A tag
+     * brings its own brackets and colour; a blank tag is not shown.
      */
     static String identity(java.util.function.Predicate<String> has, java.util.Map<String, String> tags) {
         var shown = new StringBuilder();
-        boolean admin = has.test("toka.identity.admin");
-        for (String id : java.util.List.of("admin", "sponsor", "linked")) {
-            if (admin && id.equals("sponsor")) continue;
-            if (has.test("toka.identity." + id)) shown.append(tags.getOrDefault(id, ""));
-        }
+        for (String id : identityIds(has)) shown.append(tags.getOrDefault(id, ""));
         if (shown.length() == 0) shown.append(tags.getOrDefault("ordinary", ""));
         return shown.toString();
     }
 
-    /** The identities as kept in the profile ("admin,sponsor"), so the tag can be composed for someone who is offline. */
+    /** The identities as kept in the profile ("sponsor,linked"), so the tag can be composed for someone who is offline. */
     static String identities(java.util.function.Predicate<String> has) {
-        var found = new java.util.ArrayList<String>();
-        for (String id : java.util.List.of("admin", "sponsor", "linked")) if (has.test("toka.identity." + id)) found.add(id);
-        return String.join(",", found);
+        return String.join(",", identityIds(has));
     }
 
     /** Registers the "title" part with tokaDisplay if it is running; safe to call again. */

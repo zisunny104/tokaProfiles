@@ -12,7 +12,8 @@ public class IdentityTagTest {
 
     @Test public void anOrdinaryPlayerShowsTheOrdinaryTag() { assertEquals("§6[普]", tag()); }
 
-    @Test public void identitiesAreKeptAsPlainWords() { assertEquals("admin,sponsor", DisplayLink.identities(n -> !n.endsWith("linked"))); }
+    @Test public void identitiesAreKeptAsPlainWords() { assertEquals("sponsor,linked", DisplayLink.identities(n -> !n.endsWith("admin")));
+        assertEquals("admin", DisplayLink.identities(n -> true)); }
 
     @Test public void anAdministratorIsNotAlsoShownAsASponsor() {
         assertEquals("§b[管]", tag("toka.identity.sponsor", "toka.identity.admin"));
