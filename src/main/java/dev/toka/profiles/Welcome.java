@@ -20,7 +20,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 final class Welcome implements Listener {
     static final String PREFERENCE = "welcome", PENDING = "pending", DONE = "done";
-    private static final int PAGES = 5;
+    private static final int PAGES = 1;
 
     private final Main plugin;
     private final Messages messages;
