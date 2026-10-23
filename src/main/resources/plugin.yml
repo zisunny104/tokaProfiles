@@ -1,6 +1,6 @@
 name: tokaProfiles
 main: dev.toka.profiles.Main
-version: "0.3.0"
+version: "0.3.1"
 api: ["1.0.0"]
 author: zisunny104
 load: STARTUP

@@ -21,7 +21,7 @@ public final class LegacyBook implements AutoCloseable {
 
     private LegacyBook(DocumentStore store) throws IOException {
         this.store = store;
-        for (var entry : store.snapshot().entrySet()) records.put(entry.getKey(), LegacyRecord.fromJson(entry.getValue()));
+        for (var entry : store.snapshot().values()) { LegacyRecord record = LegacyRecord.fromJson(entry); records.put(key(record.name()), record); }
     }
 
     public static LegacyBook open(StoreConfig config) throws IOException {
@@ -31,6 +31,12 @@ public final class LegacyBook implements AutoCloseable {
     }
 
     public static String key(String name) { return name.toLowerCase(Locale.ROOT); }
+
+    /** Names can hold anything, the store only plain characters: the document is kept under a hash of the name. */
+    static String storeKey(String name) {
+        try { return "n-" + java.util.HexFormat.of().formatHex(java.security.MessageDigest.getInstance("SHA-256").digest(key(name).getBytes(java.nio.charset.StandardCharsets.UTF_8)), 0, 20); }
+        catch (java.security.NoSuchAlgorithmException impossible) { throw new IllegalStateException(impossible); }
+    }
 
     /** Control characters, a leading "@" and quote marks are dropped: the old tables hold names typed by hand. */
     public static String clean(String name) {
@@ -65,7 +71,7 @@ public final class LegacyBook implements AutoCloseable {
             LegacyRecord record = new LegacyRecord(name, LegacyRecord.text(row, "id"), uuid, LegacyRecord.text(row, "title"), LegacyRecord.text(row, "village"),
                     LegacyRecord.text(row, "discordId"), evidence, Set.of(), null);
             records.put(key(name), record);
-            documents.put(key(name), record.toJson());
+            documents.put(storeKey(name), record.toJson());
             added.add(record);
         }
         if (!documents.isEmpty()) store.saveAll(documents);
@@ -98,7 +104,7 @@ public final class LegacyBook implements AutoCloseable {
         LegacyRecord record = records.get(key(name));
         if (record == null || record.disputed().contains(by)) return false;
         LegacyRecord next = record.disputedBy(by);
-        store.save(key(name), next.toJson());
+        store.save(storeKey(name), next.toJson());
         records.put(key(name), next);
         return true;
     }
@@ -108,7 +114,7 @@ public final class LegacyBook implements AutoCloseable {
         LegacyRecord record = records.get(key(name));
         if (record == null || record.claimedBy() != null) return false;
         LegacyRecord next = record.claimed(by);
-        store.save(key(name), next.toJson());
+        store.save(storeKey(name), next.toJson());
         records.put(key(name), next);
         for (var listener : listeners) {
             try { listener.accept(next.name(), by); } catch (RuntimeException | LinkageError ignored) { /* a receiver catches up from resolved() */ }
@@ -121,7 +127,7 @@ public final class LegacyBook implements AutoCloseable {
         LegacyRecord record = records.get(key(name));
         if (record == null || record.claimedBy() != null) return;
         LegacyRecord next = record.claimed(by);
-        store.save(key(name), next.toJson());
+        store.save(storeKey(name), next.toJson());
         records.put(key(name), next);
     }
 
