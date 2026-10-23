@@ -164,12 +164,12 @@ citypass:
   main:
     title: "城市通"
     body: ""
-    teleport: "傳送"
-    wallet: "錢包"
-    land: "領地"
-    profile: "個人資料"
-    status: "伺服器狀態"
-    help: "使用說明"
+    teleport: "傳送系統"
+    wallet: "經濟系統"
+    land: "領地管理"
+    profile: "資料管理"
+    status: "伺服狀態"
+    help: "幫助頁面"
   profile:
     title: "個人資料"
     # ${0}＝名稱、${1}＝稱號、${2}＝戶籍、${3}＝身分
