@@ -57,6 +57,15 @@ plan:
   mode: auto # auto 自動偵測；enable 未就緒時提示；disable 不發布。
   fields: all # all | none | 欄位清單；指令可逐項管理。
 
+# 名稱標籤最前面的身分標記（需要 tokaDisplay 的 ${prefix} 片段）。身分是權限節點 toka.identity.<名稱>；
+# 標記文字與群組名稱無關，留空代表不顯示。一般玩家的 ordinary 預設不顯示。
+identity:
+  tags:
+    admin: "§c管"
+    sponsor: "§6特"
+    linked: ""
+    ordinary: ""
+
 # 名稱標籤中，稱號後面接的分隔文字（需要 tokaDisplay 0.4.0 以上）。沒有稱號就不顯示。
 nametag:
   title-suffix: "§6-"
