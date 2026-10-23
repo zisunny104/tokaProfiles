@@ -65,8 +65,6 @@ public final class Main extends PluginBase implements cn.nukkit.event.Listener {
   for(var p:self.profiles.snapshot().values()){var note=p.preferences().get("note");if(note!=null&&Notes.entries(note).stream().anyMatch(e->e.type().equals(type)))out.add(p.uuid());}
   return out;
  }
- /** Whether the welcome pages for new players are shown from here. For zero's hand-over, by reflection. */
- public static boolean handlesWelcome(){var self=running;return self!=null&&self.welcome!=null;}
  /** Every old name that has been taken over, name to account; empty while the plugin is not running. For plugins that replace old names. */
  public static java.util.Map<String,java.util.UUID> legacyResolved(){var self=running;return self==null||self.book==null?java.util.Map.of():self.book.resolved();}
  /** What the old record said about an account that took over a name: village, discordId, title. Empty when it has none. */
@@ -176,8 +174,6 @@ public final class Main extends PluginBase implements cn.nukkit.event.Listener {
  }
  public ProfileRepository profiles(){if(profiles==null||profiles.state()!=ProfileRepository.State.READY)throw new IllegalStateException("Profiles unavailable");return profiles;}
  public void openCityPass(Player player){if(cityPass!=null)cityPass.menu(player);}
- /** Whether the city pass (item and menu) is made here. For zero's hand-over, by reflection. */
- public static boolean handlesCityPass(){var self=running;return self!=null&&self.cityPass!=null;}
  @Override public boolean onCommand(CommandSender sender,Command command,String label,String[] args){
   if(planControl!=null&&planControl.command(sender,args,"tokaProfiles.admin"))return true;
   if(args.length>0&&args[0].equalsIgnoreCase("help")){sendHelp(sender);return true;}
