@@ -32,6 +32,7 @@ public final class Main extends PluginBase implements cn.nukkit.event.Listener {
   book=dev.toka.profiles.legacy.LegacyBook.open(new StoreConfig(backend,localPath("legacy"),1));
   inheritance=new dev.toka.profiles.legacy.Inheritance(profiles,book,task->getServer().getScheduler().scheduleTask(this,task),line->getLogger().info(line),line->getLogger().warning(line));
   running=this;
+  var tidy=new Thread(this::modernizeNotes,"tokaProfiles-notes-tidy");tidy.setDaemon(true);tidy.start();
   welcome=new Welcome(this,messages);getServer().getPluginManager().registerEvents(welcome,this);
   var notes=getDataFolder().toPath().resolve("legacy-notes.json");
   var source=getDataFolder().toPath().resolve("legacy-players.json");
@@ -46,6 +47,20 @@ public final class Main extends PluginBase implements cn.nukkit.event.Listener {
     }catch(Exception error){getLogger().warning(messages.text("log.legacyImportFailed",String.valueOf(error)));}},"tokaProfiles-legacy-notes");
    worker.setDaemon(true);worker.start();
   }
+ }
+ /** The entries of the given type in a player's note, each as its fields (with "type" and "text" too). For plugins that act on notes, by reflection. */
+ public static java.util.List<java.util.Map<String,String>> noteEntries(java.util.UUID uuid,String type){
+  var self=running;if(self==null||self.profiles==null)return java.util.List.of();
+  var out=new java.util.ArrayList<java.util.Map<String,String>>();
+  self.profiles.find(uuid).ifPresent(p->{for(var entry:Notes.entries(p.preferences().getOrDefault("note",""))){if(!entry.type().equals(type))continue;var fields=new java.util.LinkedHashMap<String,String>(entry.fields());fields.put("type",entry.type());fields.put("text",entry.text());out.add(fields);}});
+  return out;
+ }
+ /** Every player whose note has an entry of the type. */
+ public static java.util.List<java.util.UUID> notedPlayers(String type){
+  var self=running;if(self==null||self.profiles==null)return java.util.List.of();
+  var out=new java.util.ArrayList<java.util.UUID>();
+  for(var p:self.profiles.snapshot().values()){var note=p.preferences().get("note");if(note!=null&&Notes.entries(note).stream().anyMatch(e->e.type().equals(type)))out.add(p.uuid());}
+  return out;
  }
  /** Whether the welcome pages for new players are shown from here. For zero's hand-over, by reflection. */
  public static boolean handlesWelcome(){var self=running;return self!=null&&self.welcome!=null;}
@@ -67,6 +82,27 @@ public final class Main extends PluginBase implements cn.nukkit.event.Listener {
   }catch(RuntimeException unavailable){/* the next login records it */}
  }
  @cn.nukkit.event.EventHandler(priority=cn.nukkit.event.EventPriority.MONITOR) public void left(cn.nukkit.event.player.PlayerQuitEvent e){if(inheritance!=null&&profiles!=null)rememberIdentity(e.getPlayer());}
+ /** /profiles donation <player or UUID> <amount> [text]: adds a donation to the note; tokaRewards gives the reward for it. */
+ private void donationCommand(CommandSender sender,String[] args){
+  if(!sender.hasPermission("tokaProfiles.note")){sender.sendMessage(messages.text("err.noNotePermission"));return;}
+  ProfileRepository repository;try{repository=profiles();}catch(IllegalStateException e){sender.sendMessage(messages.text("err.profilesNotReady"));return;}
+  if(args.length<3){sender.sendMessage(messages.text("note.donationUsage"));return;}
+  java.util.Optional<dev.toka.profiles.model.Profile> found;
+  try{found=repository.find(java.util.UUID.fromString(args[1]));}catch(IllegalArgumentException notUuid){found=repository.findByName(args[1]);}
+  if(found.isEmpty()){sender.sendMessage(messages.text("err.legacy.noPlayer"));return;}
+  long amount;try{amount=Long.parseLong(args[2]);if(amount<1||amount>100000000)throw new NumberFormatException();}catch(NumberFormatException bad){sender.sendMessage(messages.text("note.donationUsage"));return;}
+  var now=java.time.LocalDateTime.now();
+  String text=args.length>3?String.join(" ",java.util.Arrays.copyOfRange(args,3,args.length)):"";
+  String line=new Notes.Entry("donation",new java.util.LinkedHashMap<>(java.util.Map.of("amount",Long.toString(amount),"id",now.format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMddHHmmss")),"date",now.format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd")))),text.replace("\n"," ")).line();
+  var profile=found.get();String note=Notes.append(profile.preferences().getOrDefault("note",""),line);
+  if(note.length()>1000){sender.sendMessage(messages.text("note.tooLong"));return;}
+  repository.put(profile.withPreference("note",note)).whenComplete((done,failure)->getServer().getScheduler().scheduleTask(this,()->sender.sendMessage(failure==null?messages.text("note.donationSaved",profile.name(),amount):String.valueOf(failure))));
+ }
+ /** Notes written as plain text by an earlier version are rewritten as entries. */
+ private void modernizeNotes(){
+  if(profiles==null)return;
+  for(var p:profiles.snapshot().values()){var note=p.preferences().get("note");if(note==null)continue;var now=Notes.modernized(note);if(!now.equals(note))try{profiles.put(p.withPreference("note",now)).get();}catch(Exception skip){/* tried again at the next start */}}
+ }
  /** /profiles note <player or UUID> [text|clear]: a free text about a player, for administrators. */
  private void noteCommand(CommandSender sender,String[] args){
   if(!sender.hasPermission("tokaProfiles.note")){sender.sendMessage(messages.text("err.noNotePermission"));return;}
@@ -145,6 +181,7 @@ public final class Main extends PluginBase implements cn.nukkit.event.Listener {
   if(args.length>0&&args[0].equalsIgnoreCase("help")){sendHelp(sender);return true;}
   if(args.length>0&&args[0].equalsIgnoreCase("legacy")){legacyCommand(sender,args);return true;}
   if(args.length>0&&args[0].equalsIgnoreCase("note")){noteCommand(sender,args);return true;}
+  if(args.length>0&&args[0].equalsIgnoreCase("donation")){donationCommand(sender,args);return true;}
   if(args.length>0&&(args[0].equalsIgnoreCase("title")||args[0].equalsIgnoreCase("titles"))){
    if(!sender.hasPermission(dev.toka.profiles.command.TitleAdmin.PERMISSION)){sender.sendMessage(messages.text("err.noTitlePermission"));return true;}
    ProfileRepository repository;try{repository=profiles();}catch(IllegalStateException e){sender.sendMessage(messages.text("err.profilesNotReady"));return true;}

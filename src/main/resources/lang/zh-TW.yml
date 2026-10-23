@@ -162,6 +162,9 @@ note:
   saved: "§7[玩家資料]§r §a已儲存 ${0} 的備註"
   cleared: "§7[玩家資料]§r §a已清除 ${0} 的備註"
   tooLong: "§7[玩家資料]§r §c備註最長 1000 字"
+  donationUsage: "§7用法：/profiles donation <玩家或 UUID> <金額> [說明]"
+  # ${0}＝玩家、${1}＝金額
+  donationSaved: "§7[玩家資料]§r §a已記下 ${0} 的贊助 ${1}，獎勵由 tokaRewards 發放"
 legacy:
   summary: "§b舊名稱共 §a${0} §b筆，尚未取回 §a${1} §b筆，等管理員確認 §a${2} §b筆"
   waiting: "§e${0} §7- 有這些帳號想取回：${1}（/profiles legacy confirm ${0} <玩家或 UUID>）"
