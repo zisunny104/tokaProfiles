@@ -48,6 +48,8 @@ final class DisplayLink {
         return String.join(",", identityIds(has));
     }
 
+    private static final long SETTLE_MILLIS = 30_000;
+
     /** Registers the "title" part with tokaDisplay if it is running; safe to call again. */
     static void register(Main profiles, String suffix) {
         Plugin display = profiles.getServer().getPluginManager().getPlugin("tokaDisplay");
@@ -59,11 +61,15 @@ final class DisplayLink {
                 catch (RuntimeException unavailable) { return ""; }
             };
             api.getMethod("registerNameTagPart", String.class, String.class, BiFunction.class).invoke(null, profiles.getName(), "title", title);
+            final long since = System.currentTimeMillis();
             var tags = new java.util.HashMap<String, String>();
             var defaults = java.util.Map.of("admin", "§b[管]", "sponsor", "§e[特]", "linked", "", "ordinary", "§6[普]");
             for (String id : defaults.keySet()) tags.put(id, profiles.getConfig().getString("identity.tags." + id, defaults.get(id)));
             BiFunction<UUID, Player, String> identity = (id, online) -> {
-                if (online != null) return identity(online::hasPermission, tags);
+                // Right after a reload the permissions of the players who are online are not attached yet: for a short while a player
+                // who shows no identity at all is shown as the profile remembers them, like someone who is offline.
+                boolean settling = System.currentTimeMillis() - since < SETTLE_MILLIS;
+                if (online != null && !(settling && identityIds(online::hasPermission).isEmpty())) return identity(online::hasPermission, tags);
                 try {
                     var kept = java.util.Set.of(profiles.profiles().find(id).map(p -> p.preferences().getOrDefault("identity", "")).orElse("").split(","));
                     return identity(node -> kept.contains(node.substring("toka.identity.".length())), tags);
