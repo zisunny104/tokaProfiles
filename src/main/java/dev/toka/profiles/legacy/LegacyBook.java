@@ -69,13 +69,22 @@ public final class LegacyBook implements AutoCloseable {
             if (row.has("evidence")) for (JsonElement e : row.getAsJsonArray("evidence")) { try { evidence.add(UUID.fromString(e.getAsString())); } catch (IllegalArgumentException skip) { } }
             if (uuid != null) evidence.add(uuid);
             LegacyRecord record = new LegacyRecord(name, LegacyRecord.text(row, "id"), uuid, LegacyRecord.text(row, "title"), LegacyRecord.text(row, "village"),
-                    LegacyRecord.text(row, "discordId"), evidence, Set.of(), null);
+                    LegacyRecord.text(row, "discordId"), evidence, Set.of(), null, LegacyRecord.text(row, "note"));
             records.put(key(name), record);
             documents.put(storeKey(name), record.toJson());
             added.add(record);
         }
         if (!documents.isEmpty()) store.saveAll(documents);
         return added;
+    }
+
+    /** Keeps a note with a name whose player has not come back yet; it goes into the profile when they do. */
+    public synchronized void setNote(String name, String note) throws IOException {
+        LegacyRecord record = records.get(key(name));
+        if (record == null) return;
+        LegacyRecord next = record.withNote(note);
+        store.save(storeKey(name), next.toJson());
+        records.put(key(name), next);
     }
 
     public synchronized Optional<LegacyRecord> find(String name) { return Optional.ofNullable(records.get(key(name))); }

@@ -15,6 +15,8 @@ import java.util.function.Consumer;
  * the server thread ({@code main}), because that is where the receivers of the news expect to hear it.
  */
 public final class Inheritance {
+    /** The preference that holds a free text about the player, written by administrators. */
+    public static final String NOTE = "note";
     private final ProfileRepository profiles;
     private final LegacyBook book;
     private final Executor main;
@@ -55,8 +57,9 @@ public final class Inheritance {
     private CompletableFuture<Void> adopt(LegacyRecord record, UUID uuid) {
         Profile profile = profiles.find(uuid).orElseThrow();
         Profile merged = profile.title().isEmpty() && !record.title().isBlank() && record.title().length() <= 255 ? profile.withTitle(record.title()) : profile;
-        Profile withId = profile.legacyId().isEmpty() && !record.legacyId().isBlank() ? merged.withLegacyId(record.legacyId()) : merged;
-        return profiles.put(withId).exceptionallyComposeAsync(failure -> profiles.put(merged), main).thenRunAsync(() -> {
+        Profile noted = !record.note().isBlank() && profile.preferences().getOrDefault(NOTE, "").isBlank() ? merged.withPreference(NOTE, record.note()) : merged;
+        Profile withId = profile.legacyId().isEmpty() && !record.legacyId().isBlank() ? noted.withLegacyId(record.legacyId()) : noted;
+        return profiles.put(withId).exceptionallyComposeAsync(failure -> profiles.put(noted), main).thenRunAsync(() -> {
             try {
                 if (book.claim(record.name(), uuid)) info.accept("舊名稱 " + record.name() + " 已由 " + uuid + " 取回");
             } catch (IOException failure) {
@@ -75,6 +78,25 @@ public final class Inheritance {
     }
 
     /**
+     * Notes about players from the old data ({"name": "text"}): put into the profile when the account is known, otherwise kept with the
+     * old name until its player comes back. Nothing already written is replaced.
+     */
+    public String importNotes(Path source) throws IOException, InterruptedException, ExecutionException {
+        JsonObject notes = JsonParser.parseString(Files.readString(source, StandardCharsets.UTF_8)).getAsJsonObject();
+        int put = 0, kept = 0;
+        for (var entry : notes.entrySet()) {
+            String text = entry.getValue().getAsString();
+            var record = book.find(dev.toka.profiles.legacy.LegacyBook.clean(entry.getKey()));
+            if (record.isEmpty() || text.isBlank()) continue;
+            var profile = record.get().uuid() == null ? Optional.<Profile>empty() : profiles.find(record.get().uuid());
+            if (profile.isPresent()) {
+                if (profile.get().preferences().getOrDefault(NOTE, "").isBlank()) { profiles.put(profile.get().withPreference(NOTE, text)).get(); put++; }
+            } else if (record.get().note().isBlank()) { book.setNote(dev.toka.profiles.legacy.LegacyBook.clean(entry.getKey()), text); kept++; }
+        }
+        return "舊玩家備註：寫進玩家檔案 " + put + " 筆、等本人登入 " + kept + " 筆";
+    }
+
+    /**
      * Reads the old player table that was left in the data folder and adds what is not known yet. Entries that already had an account
      * get their profile at once; the others wait for their player. Runs on a thread of its own.
      */
@@ -86,7 +108,7 @@ public final class Inheritance {
         for (LegacyRecord record : added) {
             if (record.uuid() == null) { waiting++; continue; }
             if (profiles.find(record.uuid()).isEmpty()) {
-                Profile made = new Profile(record.uuid(), record.name(), Set.of(), Map.of(), null, record.title().length() <= 255 ? record.title() : "");
+                Profile made = new Profile(record.uuid(), record.name(), Set.of(), record.note().isBlank() ? Map.of() : Map.of(NOTE, record.note()), null, record.title().length() <= 255 ? record.title() : "");
                 try { profiles.put(made.withLegacyId(record.legacyId().isBlank() ? null : record.legacyId())).get(); profilesMade++; }
                 catch (ExecutionException collision) { profiles.put(made).get(); profilesMade++; }
             }

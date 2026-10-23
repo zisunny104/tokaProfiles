@@ -62,6 +62,7 @@ msg:
 
 # ───────────────────────── 錯誤與拒絕（err） ─────────────────────────
 err:
+  noNotePermission: "§7[玩家資料]§r §c您沒有權限管理備註。"
   noLegacyPermission: "§7[玩家資料]§r §c您沒有權限管理舊名稱。"
   legacy:
     noPlayer: "§7[玩家資料]§r §c找不到這個玩家，請改用 UUID。"
@@ -133,6 +134,13 @@ log:
   # 寫進 stage 目錄 NOTICE.txt 的內容（給管理員看的檔案，不含色碼）
   stageNotice: "私人搬遷快照。不可加入 Git。ready 不代表正式資料已切換；線上來源仍須停服後補齊差異。"
 
+note:
+  usage: "§7用法：/profiles note <玩家或 UUID> [文字|clear]（不加文字是查看）"
+  show: "§7[玩家資料]§r §b${0} 的備註：§f${1}"
+  none: "§7[玩家資料]§r §b${0} 沒有備註"
+  saved: "§7[玩家資料]§r §a已儲存 ${0} 的備註"
+  cleared: "§7[玩家資料]§r §a已清除 ${0} 的備註"
+  tooLong: "§7[玩家資料]§r §c備註最長 1000 字"
 legacy:
   summary: "§b舊名稱共 §a${0} §b筆，尚未取回 §a${1} §b筆，等管理員確認 §a${2} §b筆"
   waiting: "§e${0} §7- 有這些帳號想取回：${1}（/profiles legacy confirm ${0} <玩家或 UUID>）"

@@ -31,9 +31,17 @@ public final class Main extends PluginBase implements cn.nukkit.event.Listener {
   book=dev.toka.profiles.legacy.LegacyBook.open(new StoreConfig(backend,localPath("legacy"),1));
   inheritance=new dev.toka.profiles.legacy.Inheritance(profiles,book,task->getServer().getScheduler().scheduleTask(this,task),line->getLogger().info(line),line->getLogger().warning(line));
   running=this;
+  var notes=getDataFolder().toPath().resolve("legacy-notes.json");
   var source=getDataFolder().toPath().resolve("legacy-players.json");
   if(java.nio.file.Files.isRegularFile(source)){
    var worker=new Thread(()->{try{getLogger().info(inheritance.importFile(source));java.nio.file.Files.move(source,source.resolveSibling("legacy-players.json.imported"),java.nio.file.StandardCopyOption.REPLACE_EXISTING);}catch(Exception error){getLogger().warning(messages.text("log.legacyImportFailed",String.valueOf(error)));}},"tokaProfiles-legacy-import");
+   worker.setDaemon(true);worker.start();
+  }
+  if(java.nio.file.Files.isRegularFile(notes)){
+   var worker=new Thread(()->{try{
+     while(java.nio.file.Files.isRegularFile(source))Thread.sleep(500); // the players first: the notes go into their profiles
+     getLogger().info(inheritance.importNotes(notes));java.nio.file.Files.move(notes,notes.resolveSibling("legacy-notes.json.imported"),java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+    }catch(Exception error){getLogger().warning(messages.text("log.legacyImportFailed",String.valueOf(error)));}},"tokaProfiles-legacy-notes");
    worker.setDaemon(true);worker.start();
   }
  }
@@ -55,6 +63,20 @@ public final class Main extends PluginBase implements cn.nukkit.event.Listener {
   }catch(RuntimeException unavailable){/* the next login records it */}
  }
  @cn.nukkit.event.EventHandler(priority=cn.nukkit.event.EventPriority.MONITOR) public void left(cn.nukkit.event.player.PlayerQuitEvent e){if(inheritance!=null&&profiles!=null)rememberIdentity(e.getPlayer());}
+ /** /profiles note <player or UUID> [text|clear]: a free text about a player, for administrators. */
+ private void noteCommand(CommandSender sender,String[] args){
+  if(!sender.hasPermission("tokaProfiles.note")){sender.sendMessage(messages.text("err.noNotePermission"));return;}
+  ProfileRepository repository;try{repository=profiles();}catch(IllegalStateException e){sender.sendMessage(messages.text("err.profilesNotReady"));return;}
+  if(args.length<2){sender.sendMessage(messages.text("note.usage"));return;}
+  java.util.Optional<dev.toka.profiles.model.Profile> found;
+  try{found=repository.find(java.util.UUID.fromString(args[1]));}catch(IllegalArgumentException notUuid){found=repository.findByName(args[1]);}
+  if(found.isEmpty()){sender.sendMessage(messages.text("err.legacy.noPlayer"));return;}
+  var profile=found.get();
+  if(args.length==2){var text=profile.preferences().getOrDefault("note","");sender.sendMessage(text.isBlank()?messages.text("note.none",profile.name()):messages.text("note.show",profile.name(),text));return;}
+  String text=args[2].equalsIgnoreCase("clear")&&args.length==3?"":String.join(" ",java.util.Arrays.copyOfRange(args,2,args.length));
+  if(text.length()>1000){sender.sendMessage(messages.text("note.tooLong"));return;}
+  repository.put(profile.withPreference("note",text)).whenComplete((done,failure)->getServer().getScheduler().scheduleTask(this,()->sender.sendMessage(failure==null?messages.text(text.isEmpty()?"note.cleared":"note.saved",profile.name()):String.valueOf(failure))));
+ }
  private void legacyCommand(CommandSender sender,String[] args){
   if(!sender.hasPermission("tokaProfiles.legacy")){sender.sendMessage(messages.text("err.noLegacyPermission"));return;}
   if(book==null){sender.sendMessage(messages.text("err.profilesNotReady"));return;}
@@ -118,6 +140,7 @@ public final class Main extends PluginBase implements cn.nukkit.event.Listener {
   if(planControl!=null&&planControl.command(sender,args,"tokaProfiles.admin"))return true;
   if(args.length>0&&args[0].equalsIgnoreCase("help")){sendHelp(sender);return true;}
   if(args.length>0&&args[0].equalsIgnoreCase("legacy")){legacyCommand(sender,args);return true;}
+  if(args.length>0&&args[0].equalsIgnoreCase("note")){noteCommand(sender,args);return true;}
   if(args.length>0&&(args[0].equalsIgnoreCase("title")||args[0].equalsIgnoreCase("titles"))){
    if(!sender.hasPermission(dev.toka.profiles.command.TitleAdmin.PERMISSION)){sender.sendMessage(messages.text("err.noTitlePermission"));return true;}
    ProfileRepository repository;try{repository=profiles();}catch(IllegalStateException e){sender.sendMessage(messages.text("err.profilesNotReady"));return true;}
