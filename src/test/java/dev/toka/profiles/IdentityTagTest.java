@@ -14,8 +14,8 @@ public class IdentityTagTest {
 
     @Test public void identitiesAreKeptAsPlainWords() { assertEquals("admin,sponsor", DisplayLink.identities(n -> !n.endsWith("linked"))); }
 
-    @Test public void identitiesStackInAFixedOrder() {
-        assertEquals("§b[管]§e[特]", tag("toka.identity.sponsor", "toka.identity.admin"));
+    @Test public void anAdministratorIsNotAlsoShownAsASponsor() {
+        assertEquals("§b[管]", tag("toka.identity.sponsor", "toka.identity.admin"));
     }
 
     @Test public void aBlankTagIsNotShown() { assertEquals("§b[管]", tag("toka.identity.linked", "toka.identity.admin")); }

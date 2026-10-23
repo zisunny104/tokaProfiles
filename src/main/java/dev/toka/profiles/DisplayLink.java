@@ -24,8 +24,11 @@ final class DisplayLink {
      */
     static String identity(java.util.function.Predicate<String> has, java.util.Map<String, String> tags) {
         var shown = new StringBuilder();
-        for (String id : java.util.List.of("admin", "sponsor", "linked"))
+        boolean admin = has.test("toka.identity.admin");
+        for (String id : java.util.List.of("admin", "sponsor", "linked")) {
+            if (admin && id.equals("sponsor")) continue;
             if (has.test("toka.identity." + id)) shown.append(tags.getOrDefault(id, ""));
+        }
         if (shown.length() == 0) shown.append(tags.getOrDefault("ordinary", ""));
         return shown.toString();
     }

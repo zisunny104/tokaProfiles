@@ -1,6 +1,6 @@
 name: tokaProfiles
 main: dev.toka.profiles.Main
-version: "0.3.3"
+version: "0.3.4"
 api: ["1.0.0"]
 author: zisunny104
 load: STARTUP
@@ -27,6 +27,15 @@ permissions:
     default: op
 
 
+  toka.identity.admin:
+    description: 身分：管理員（由權限群組授予，名牌顯示管）
+    default: false
+  toka.identity.sponsor:
+    description: 身分：贊助者（由權限群組授予，名牌顯示特）
+    default: false
+  toka.identity.linked:
+    description: 身分：已連結資料（由 tokaDiscordLink 加入群組，名牌不顯示）
+    default: false
   tokaProfiles.legacy:
     description: 查看與確認舊名稱的歸屬（/profiles legacy）
     default: op
