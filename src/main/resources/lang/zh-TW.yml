@@ -155,6 +155,49 @@ welcome:
   start: "開始遊玩"
   # ${0}＝玩家名稱
   ready: "§e>>§b玩家 ${0} 已經準備好要開始在幻月服的生活了呢 d(`･∀･)b§r"
+# 城市通：玩家身上的指南針與它開的選單。文字一律簡短，不放符號、粗體或顏色。
+citypass:
+  inventoryFull: "背包已滿，騰出一格後重新登入就會補發城市通。"
+  back: "返回"
+  close: "關閉"
+  none: "無"
+  main:
+    title: "城市通"
+    body: ""
+    teleport: "傳送"
+    wallet: "錢包"
+    land: "領地"
+    profile: "個人資料"
+    status: "伺服器狀態"
+    help: "使用說明"
+  profile:
+    title: "個人資料"
+    # ${0}＝名稱、${1}＝稱號、${2}＝戶籍、${3}＝身分
+    body: "名稱：${0}\n稱號：${1}\n戶籍：${2}\n身分：${3}"
+    editTitle: "修改稱號"
+  titleEdit:
+    title: "修改稱號"
+    label: "新稱號（留空就是清除）"
+    placeholder: "最長 16 個字"
+  status:
+    title: "伺服器狀態"
+    # ${0}＝在線、${1}＝上限、${2}＝TPS、${3}＝已用／上限記憶體、${4}＝現在時間
+    body: "線上玩家：${0}/${1}\nTPS：${2}\n記憶體：${3} MB\n時間：${4}"
+  help:
+    title: "使用說明"
+    lines:
+      - "/portal  傳送選單"
+      - "/balance  錢包：餘額、轉帳、兌換"
+      - "/pay <玩家> <金額>  轉帳"
+      - "/spawn  回到重生點"
+      - "/land  領地說明"
+      - "/tpl  領地傳送"
+      - "/profiles  開啟城市通"
+  identity:
+    admin: "管理員"
+    sponsor: "贊助者"
+    linked: "已連結資料"
+    ordinary: "一般玩家"
 note:
   usage: "§7用法：/profiles note <玩家或 UUID> [文字|clear]（不加文字是查看）"
   show: "§7[玩家資料]§r §b${0} 的備註：§f${1}"

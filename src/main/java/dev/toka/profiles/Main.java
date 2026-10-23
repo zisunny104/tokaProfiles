@@ -17,6 +17,7 @@ public final class Main extends PluginBase implements cn.nukkit.event.Listener {
  private dev.toka.profiles.legacy.LegacyBook book;
  private dev.toka.profiles.legacy.Inheritance inheritance;
  private Welcome welcome;
+ private CityPass cityPass;
  private static volatile Main running;
  private final dev.toka.profiles.command.SelfTitle selfTitle=new dev.toka.profiles.command.SelfTitle();
  private dev.toka.profiles.plan.PlanControl planControl;
@@ -34,6 +35,8 @@ public final class Main extends PluginBase implements cn.nukkit.event.Listener {
   running=this;
   var tidy=new Thread(this::modernizeNotes,"tokaProfiles-notes-tidy");tidy.setDaemon(true);tidy.start();
   welcome=new Welcome(this,messages);getServer().getPluginManager().registerEvents(welcome,this);
+  cityPass=new CityPass(this,messages);getServer().getPluginManager().registerEvents(cityPass,this);
+  for(Player online:getServer().getOnlinePlayers().values())cityPass.ensureItem(online);
   var notes=getDataFolder().toPath().resolve("legacy-notes.json");
   var source=getDataFolder().toPath().resolve("legacy-players.json");
   if(java.nio.file.Files.isRegularFile(source)){
@@ -175,7 +178,9 @@ public final class Main extends PluginBase implements cn.nukkit.event.Listener {
   }
  }
  public ProfileRepository profiles(){if(profiles==null||profiles.state()!=ProfileRepository.State.READY)throw new IllegalStateException("Profiles unavailable");return profiles;}
- public void openCityPass(Player player){var profile=profiles().find(player.getUniqueId());String content=profile.map(p->messages.text("ui.cityPass.content",p.name(),p.profileId())).orElse(messages.text("ui.cityPass.noData"));var form=new FormWindowSimple(messages.text("ui.cityPass.title"),content);form.addButton(new ElementButton(messages.text("ui.cityPass.close")));player.showFormWindow(form,21080000);}
+ public void openCityPass(Player player){if(cityPass!=null)cityPass.menu(player);}
+ /** Whether the city pass (item and menu) is made here. For zero's hand-over, by reflection. */
+ public static boolean handlesCityPass(){var self=running;return self!=null&&self.cityPass!=null;}
  @Override public boolean onCommand(CommandSender sender,Command command,String label,String[] args){
   if(planControl!=null&&planControl.command(sender,args,"tokaProfiles.admin"))return true;
   if(args.length>0&&args[0].equalsIgnoreCase("help")){sendHelp(sender);return true;}
