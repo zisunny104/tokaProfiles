@@ -1,6 +1,6 @@
 name: tokaProfiles
 main: dev.toka.profiles.Main
-version: "0.2.5"
+version: "0.3.0"
 api: ["1.0.0"]
 author: zisunny104
 load: STARTUP
@@ -27,6 +27,9 @@ permissions:
     default: op
 
 
+  tokaProfiles.legacy:
+    description: 查看與確認舊名稱的歸屬（/profiles legacy）
+    default: op
   tokaProfiles.admin:
     description: 管理 Plan 展示設定
     default: op

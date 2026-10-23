@@ -28,6 +28,9 @@ public final class Profile {
  public UUID uuid(){return uuid;} public UUID profileId(){return uuid;} public String name(){return name;} public Set<String> aliases(){return aliases;} public Map<String,String> preferences(){return preferences;} public Optional<String> legacyId(){return Optional.ofNullable(legacyId);}
  public String title(){return title;}
  public Profile withTitle(String value){return new Profile(uuid,name,aliases,preferences,legacyId,value,affiliation);}
+ public Profile withLegacyId(String value){return new Profile(uuid,name,aliases,preferences,value,title,affiliation);}
+ public Profile withName(String value){var all=new LinkedHashSet<String>(aliases);if(!name.equals(value))all.add(name);all.remove(value);return new Profile(uuid,value,all,preferences,legacyId,title,affiliation);}
+ public Profile withPreference(String key,String value){var copy=new TreeMap<String,String>(preferences);copy.put(key,value);return new Profile(uuid,name,aliases,copy,legacyId,title,affiliation);}
  public String affiliation(){return affiliation;}
  public Profile withAffiliation(String value){return new Profile(uuid,name,aliases,preferences,legacyId,title,value);}
 }
