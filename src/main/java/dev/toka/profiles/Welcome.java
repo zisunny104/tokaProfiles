@@ -36,8 +36,17 @@ final class Welcome implements Listener {
         boolean pending = profiles.find(player.getUniqueId()).map(p -> PENDING.equals(p.preferences().get(PREFERENCE))).orElse(false);
         if (pending && player.isOnline()) {
             player.setGamemode(2); // adventure until the pages are read
+            registerHousehold(player);
             show(player, 1);
         }
+    }
+
+    /** A new player is registered in a village by tokaRegions, which knows the villages; without it, or without villages, nothing happens. */
+    private void registerHousehold(Player player) {
+        var regions = plugin.getServer().getPluginManager().getPlugin("tokaRegions");
+        if (regions == null || !regions.isEnabled()) return;
+        try { regions.getClass().getMethod("assignHousehold", UUID.class).invoke(null, player.getUniqueId()); }
+        catch (ReflectiveOperationException | LinkageError unavailable) { /* the household can be set by an administrator */ }
     }
 
     private void show(Player player, int page) {
