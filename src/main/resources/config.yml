@@ -58,13 +58,13 @@ plan:
   fields: all # all | none | 欄位清單；指令可逐項管理。
 
 # 名稱標籤最前面的身分標記（需要 tokaDisplay 的 ${prefix} 片段）。身分是權限節點 toka.identity.<名稱>；
-# 標記文字與群組名稱無關，留空代表不顯示。一般玩家的 ordinary 預設不顯示。
+# 標記文字（含括號與顏色）與群組名稱無關，留空代表不顯示。沒有任何身分的人顯示 ordinary。
 identity:
   tags:
-    admin: "§c管"
-    sponsor: "§6特"
+    admin: "§b[管]"
+    sponsor: "§e[特]"
     linked: ""
-    ordinary: ""
+    ordinary: "§6[普]"
 
 # 名稱標籤中，稱號後面接的分隔文字（需要 tokaDisplay 0.4.0 以上）。沒有稱號就不顯示。
 nametag:

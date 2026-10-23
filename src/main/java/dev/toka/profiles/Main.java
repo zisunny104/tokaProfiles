@@ -45,8 +45,16 @@ public final class Main extends PluginBase implements cn.nukkit.event.Listener {
  public static void onLegacyResolved(java.util.function.BiConsumer<String,java.util.UUID> listener){var self=running;if(self!=null&&self.book!=null)self.book.listen(listener);}
  @cn.nukkit.event.EventHandler public void joined(cn.nukkit.event.player.PlayerJoinEvent e){
   if(inheritance==null||profiles==null)return;var player=e.getPlayer();
-  inheritance.login(player.getUniqueId(),player.getName()).exceptionally(failure->{getLogger().warning(messages.text("log.loginFailed",player.getName(),String.valueOf(failure)));return null;});
+  inheritance.login(player.getUniqueId(),player.getName()).thenRun(()->rememberIdentity(player)).exceptionally(failure->{getLogger().warning(messages.text("log.loginFailed",player.getName(),String.valueOf(failure)));return null;});
  }
+ /** The identities are kept in the profile, for the name tag of someone who is offline. */
+ private void rememberIdentity(Player player){
+  try{
+   String now=DisplayLink.identities(player::hasPermission);
+   profiles().find(player.getUniqueId()).filter(p->!now.equals(p.preferences().getOrDefault("identity",""))).ifPresent(p->profiles().put(p.withPreference("identity",now)));
+  }catch(RuntimeException unavailable){/* the next login records it */}
+ }
+ @cn.nukkit.event.EventHandler(priority=cn.nukkit.event.EventPriority.MONITOR) public void left(cn.nukkit.event.player.PlayerQuitEvent e){if(inheritance!=null&&profiles!=null)rememberIdentity(e.getPlayer());}
  private void legacyCommand(CommandSender sender,String[] args){
   if(!sender.hasPermission("tokaProfiles.legacy")){sender.sendMessage(messages.text("err.noLegacyPermission"));return;}
   if(book==null){sender.sendMessage(messages.text("err.profilesNotReady"));return;}
