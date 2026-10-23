@@ -16,6 +16,7 @@ public final class Main extends PluginBase implements cn.nukkit.event.Listener {
  private AutoCloseable plan;
  private dev.toka.profiles.legacy.LegacyBook book;
  private dev.toka.profiles.legacy.Inheritance inheritance;
+ private Welcome welcome;
  private static volatile Main running;
  private final dev.toka.profiles.command.SelfTitle selfTitle=new dev.toka.profiles.command.SelfTitle();
  private dev.toka.profiles.plan.PlanControl planControl;
@@ -31,6 +32,7 @@ public final class Main extends PluginBase implements cn.nukkit.event.Listener {
   book=dev.toka.profiles.legacy.LegacyBook.open(new StoreConfig(backend,localPath("legacy"),1));
   inheritance=new dev.toka.profiles.legacy.Inheritance(profiles,book,task->getServer().getScheduler().scheduleTask(this,task),line->getLogger().info(line),line->getLogger().warning(line));
   running=this;
+  welcome=new Welcome(this,messages);getServer().getPluginManager().registerEvents(welcome,this);
   var notes=getDataFolder().toPath().resolve("legacy-notes.json");
   var source=getDataFolder().toPath().resolve("legacy-players.json");
   if(java.nio.file.Files.isRegularFile(source)){
@@ -45,6 +47,8 @@ public final class Main extends PluginBase implements cn.nukkit.event.Listener {
    worker.setDaemon(true);worker.start();
   }
  }
+ /** Whether the welcome pages for new players are shown from here. For zero's hand-over, by reflection. */
+ public static boolean handlesWelcome(){var self=running;return self!=null&&self.welcome!=null;}
  /** Every old name that has been taken over, name to account; empty while the plugin is not running. For plugins that replace old names. */
  public static java.util.Map<String,java.util.UUID> legacyResolved(){var self=running;return self==null||self.book==null?java.util.Map.of():self.book.resolved();}
  /** What the old record said about an account that took over a name: village, discordId, title. Empty when it has none. */
@@ -53,7 +57,7 @@ public final class Main extends PluginBase implements cn.nukkit.event.Listener {
  public static void onLegacyResolved(java.util.function.BiConsumer<String,java.util.UUID> listener){var self=running;if(self!=null&&self.book!=null)self.book.listen(listener);}
  @cn.nukkit.event.EventHandler public void joined(cn.nukkit.event.player.PlayerJoinEvent e){
   if(inheritance==null||profiles==null)return;var player=e.getPlayer();
-  inheritance.login(player.getUniqueId(),player.getName()).thenRun(()->rememberIdentity(player)).exceptionally(failure->{getLogger().warning(messages.text("log.loginFailed",player.getName(),String.valueOf(failure)));return null;});
+  inheritance.login(player.getUniqueId(),player.getName()).thenRun(()->{rememberIdentity(player);getServer().getScheduler().scheduleDelayedTask(this,()->welcome.offer(player,profiles),40);}).exceptionally(failure->{getLogger().warning(messages.text("log.loginFailed",player.getName(),String.valueOf(failure)));return null;});
  }
  /** The identities are kept in the profile, for the name tag of someone who is offline. */
  private void rememberIdentity(Player player){

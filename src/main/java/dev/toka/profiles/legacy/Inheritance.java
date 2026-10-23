@@ -32,7 +32,9 @@ public final class Inheritance {
 
     public CompletableFuture<Void> login(UUID uuid, String name) {
         Profile existing = profiles.find(uuid).orElse(null);
-        Profile current = existing == null ? new Profile(uuid, name, Set.of(), Map.of(), null) : existing.name().equals(name) ? existing : existing.withName(name);
+        // A player who has never been here reads the welcome pages; one who comes back under an old name does not.
+        boolean returning = book.find(name).filter(r -> r.claimedBy() == null).isPresent();
+        Profile current = existing == null ? new Profile(uuid, name, Set.of(), returning ? Map.of() : Map.of("welcome", "pending"), null) : existing.name().equals(name) ? existing : existing.withName(name);
         CompletableFuture<Void> saved = current == existing ? CompletableFuture.completedFuture(null) : profiles.put(current);
         return saved.thenComposeAsync(done -> resolve(uuid, name), main);
     }
