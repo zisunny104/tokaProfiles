@@ -108,9 +108,9 @@ final class CityPass implements Listener {
     }
 
     void menu(Player player) {
-        var labels = new ArrayList<>(List.of(text("citypass.main.teleport"), text("citypass.main.wallet"), text("citypass.main.land"),
+        var labels = new ArrayList<>(List.of(text("citypass.main.teleport"), text("citypass.main.wallet"), text("citypass.main.shop"), text("citypass.main.land"),
                 text("citypass.main.profile"), text("citypass.main.status"), text("citypass.main.help")));
-        var actions = new ArrayList<>(List.of("command:portal", "command:balance", "command:land menu", "profile", "status", "help"));
+        var actions = new ArrayList<>(List.of("command:portal", "command:balance", "command:shop", "command:land menu", "profile", "status", "help"));
         labels.add(text("citypass.close"));
         actions.add("close");
         show(player, "main", text("citypass.main.body"), labels, actions);
@@ -149,8 +149,19 @@ final class CityPass implements Listener {
         show(player, "status", body, List.of(text("citypass.back")), List.of("menu"));
     }
 
+    private static final List<String> SECTIONS = List.of("teleport", "land", "wallet", "shop", "profile", "rules");
+
     private void help(Player player) {
-        show(player, "help", String.join("\n", messages.lines("citypass.help.lines")), List.of(text("citypass.back")), List.of("menu"));
+        var labels = new ArrayList<String>();
+        var actions = new ArrayList<String>();
+        for (String section : SECTIONS) { labels.add(text("citypass.help." + section + ".label")); actions.add("help:" + section); }
+        labels.add(text("citypass.back"));
+        actions.add("menu");
+        show(player, "help", text("citypass.help.body"), labels, actions);
+    }
+
+    private void helpSection(Player player, String section) {
+        show(player, "help." + section, text("citypass.help." + section + ".body"), List.of(text("citypass.back")), List.of("help"));
     }
 
     private void editTitle(Player player) {
@@ -180,6 +191,7 @@ final class CityPass implements Listener {
             return;
         } else return;
         if (action.startsWith("command:")) { plugin.getServer().dispatchCommand(player, action.substring("command:".length())); return; }
+        if (action.startsWith("help:")) { helpSection(player, action.substring(5)); return; }
         switch (action) {
             case "menu" -> menu(player);
             case "profile" -> profile(player);
