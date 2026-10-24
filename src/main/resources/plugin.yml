@@ -1,6 +1,6 @@
 name: tokaProfiles
 main: dev.toka.profiles.Main
-version: "0.5.16"
+version: "0.5.17"
 api: ["1.0.0"]
 author: zisunny104
 load: STARTUP
@@ -8,6 +8,7 @@ softdepend: [Plan]
 description: Nukkit 玩家身分、偏好與稱號服務，並提供背景分批資料搬遷
 commands:
   profiles:
+    aliases: [profile]
     description: "玩家資料與城市通入口；管理員另有 title、note、legacy、admin、plan"
     usage: "/profiles [help [頁] | mytitle [稱號|clear] | title <玩家> [稱號|clear] | note <玩家> [文字|clear] | legacy [list|confirm <舊名稱> <玩家>] | admin | plan <status|mode|fields> | <玩家>]"
     permission: tokaProfiles.self
