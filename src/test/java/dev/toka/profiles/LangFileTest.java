@@ -50,8 +50,20 @@ public class LangFileTest {
             int bar = line.indexOf('|');
             assertTrue("untagged help line: " + line, bar > 0);
             String tag = line.substring(0, bar);
-            assertTrue("unknown tag " + tag, tag.equals("*") || tag.equals("title") || tag.equals("self"));
+            assertTrue("unknown tag " + tag, java.util.Set.of("*", "title", "self", "note", "legacy", "plan").contains(tag));
         }
+    }
+
+    @Test public void keysBuiltAtRunTimeExist() throws IOException {
+        Set<String> keys = fileKeys();
+        for (String section : List.of("base", "wallet", "checkin", "land", "discord", "notes", "legacy", "flow", "trend")) assertTrue(section, keys.contains("ui.overview.sec." + section));
+        for (String id : List.of("admin", "sponsor", "linked", "ordinary")) assertTrue(id, keys.contains("citypass.identity." + id));
+        for (String section : List.of("teleport", "land", "wallet", "shop", "profile", "rules")) {
+            assertTrue(section, keys.contains("citypass.help." + section + ".label"));
+            assertTrue(section, keys.contains("citypass.help." + section + ".title"));
+            assertTrue(section, keys.contains("citypass.help." + section + ".body"));
+        }
+        for (String kind : List.of("limit", "limitColour", "label", "placeholder", "clear", "current", "title")) assertTrue(kind, keys.contains("citypass.titleEdit." + kind));
     }
 
     private Set<String> fileKeys() throws IOException {

@@ -74,7 +74,7 @@ final class OfflineIdentities {
     }
 
     /** In the background, once after start: every profile that has no remembered identity is looked up, a few at a time */
-    void fillMissing() {
+    Thread fillMissing() {
         Thread worker = new Thread(() -> {
             try {
                 for (var profile : plugin.profiles().snapshot().values()) {
@@ -87,5 +87,6 @@ final class OfflineIdentities {
         }, "tokaProfiles-identities");
         worker.setDaemon(true);
         worker.start();
+        return worker;
     }
 }

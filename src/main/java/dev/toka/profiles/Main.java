@@ -18,37 +18,58 @@ public final class Main extends PluginBase implements cn.nukkit.event.Listener {
  private dev.toka.profiles.legacy.Inheritance inheritance;
  private Welcome welcome;
  private CityPass cityPass;
+ private Forms forms;
+ private Overview overview;
+ private AdminWindows adminWindows;
+ private final java.util.List<Thread> workers=new java.util.concurrent.CopyOnWriteArrayList<>();
  private static volatile Main running;
  private final dev.toka.profiles.command.SelfTitle selfTitle=new dev.toka.profiles.command.SelfTitle();
  private dev.toka.profiles.plan.PlanControl planControl;
- @Override public void onEnable(){saveDefaultConfig();suggest("profiles",
-  new CommandParameter[]{CommandParameter.newEnum("動作",new String[]{"help"})},
-  new CommandParameter[]{CommandParameter.newEnum("動作",new String[]{"title","titles"})},
-  new CommandParameter[]{CommandParameter.newEnum("動作",new String[]{"title","titles"}),CommandParameter.newType("玩家或UUID",CommandParamType.STRING)},
-  new CommandParameter[]{CommandParameter.newEnum("動作",new String[]{"title","titles"}),CommandParameter.newType("玩家或UUID",CommandParamType.STRING),CommandParameter.newEnum("稱號",new String[]{"clear"})},
-  new CommandParameter[]{CommandParameter.newEnum("動作",new String[]{"title","titles"}),CommandParameter.newType("玩家或UUID",CommandParamType.STRING),CommandParameter.newType("稱號",CommandParamType.RAWTEXT)});
+ @Override public void onEnable(){saveDefaultConfig();
+  var who=CommandParameter.newType("玩家或UUID",CommandParamType.TARGET);var text=CommandParameter.newType("文字",CommandParamType.RAWTEXT);
+  suggest("profiles",
+  new CommandParameter[]{CommandParameter.newEnum("動作",new String[]{"help"}),CommandParameter.newType("頁",true,CommandParamType.INT)},
+  new CommandParameter[]{CommandParameter.newEnum("動作",new String[]{"mytitle"})},
+  new CommandParameter[]{CommandParameter.newEnum("動作",new String[]{"mytitle"}),CommandParameter.newEnum("清除",new String[]{"clear"})},
+  new CommandParameter[]{CommandParameter.newEnum("動作",new String[]{"mytitle"}),CommandParameter.newType("稱號",CommandParamType.RAWTEXT)},
+  new CommandParameter[]{CommandParameter.newEnum("動作",new String[]{"title","titles"}),who},
+  new CommandParameter[]{CommandParameter.newEnum("動作",new String[]{"title","titles"}),who,CommandParameter.newEnum("清除",new String[]{"clear"})},
+  new CommandParameter[]{CommandParameter.newEnum("動作",new String[]{"title","titles"}),who,CommandParameter.newType("稱號",CommandParamType.RAWTEXT)},
+  new CommandParameter[]{CommandParameter.newEnum("動作",new String[]{"note"}),who},
+  new CommandParameter[]{CommandParameter.newEnum("動作",new String[]{"note"}),who,CommandParameter.newEnum("清除",new String[]{"clear"})},
+  new CommandParameter[]{CommandParameter.newEnum("動作",new String[]{"note"}),who,text},
+  new CommandParameter[]{CommandParameter.newEnum("動作",new String[]{"legacy"})},
+  new CommandParameter[]{CommandParameter.newEnum("動作",new String[]{"legacy"}),CommandParameter.newEnum("列表",new String[]{"list"})},
+  new CommandParameter[]{CommandParameter.newEnum("動作",new String[]{"legacy"}),CommandParameter.newEnum("確認",new String[]{"confirm"}),CommandParameter.newType("舊名稱",CommandParamType.STRING),who},
+  new CommandParameter[]{CommandParameter.newEnum("動作",new String[]{"admin"})},
+  new CommandParameter[]{who},
+  new CommandParameter[]{CommandParameter.newEnum("動作",new String[]{"plan"}),CommandParameter.newEnum("Plan動作",new String[]{"status"})},
+  new CommandParameter[]{CommandParameter.newEnum("動作",new String[]{"plan"}),CommandParameter.newEnum("Plan動作",new String[]{"mode"}),CommandParameter.newEnum("模式",new String[]{"auto","enable","disable"})},
+  new CommandParameter[]{CommandParameter.newEnum("動作",new String[]{"plan"}),CommandParameter.newEnum("Plan動作",new String[]{"fields"}),CommandParameter.newEnum("欄位",new String[]{"all","none","exists","title","count"})});
   DisplayLink.register(this,getConfig().getString("nametag.title-suffix","§6-"));
-  messages=new Messages(getClass().getClassLoader(),getDataFolder().toPath(),getConfig().getString("language","zh-TW"),line->getLogger().warning(line));Texts.use(messages);try{Backend backend=Backend.valueOf(getConfig().getString("storage.backend","sqlite").toUpperCase(java.util.Locale.ROOT));prepareMigration(backend);var active=localPath(getConfig().getString("storage.active-directory","storage"));try{active=activationPath(backend);}catch(Exception error){getLogger().error(messages.text("log.activationFailed"),error);}profiles=ProfileRepository.open(new StoreConfig(backend,active,1),getConfig().getInt("storage.queue-capacity",128));getLogger().info(messages.text("log.ready",profiles.snapshot().size()));offline().fillMissing();startStaging(backend);startLegacy(backend);getServer().getPluginManager().registerEvents(this,this);refreshPlan();}catch(Exception e){getLogger().error(messages.text("log.storageInitFailed"),e);getServer().getPluginManager().disablePlugin(this);}}
+  messages=new Messages(getClass().getClassLoader(),getDataFolder().toPath(),getConfig().getString("language","zh-TW"),line->getLogger().warning(line));Texts.use(messages);try{Backend backend=Backend.valueOf(getConfig().getString("storage.backend","sqlite").toUpperCase(java.util.Locale.ROOT));prepareMigration(backend);var active=localPath(getConfig().getString("storage.active-directory","storage"));try{active=activationPath(backend);}catch(Exception error){getLogger().error(messages.text("log.activationFailed"),error);}profiles=ProfileRepository.open(new StoreConfig(backend,active,1),getConfig().getInt("storage.queue-capacity",128));getLogger().info(messages.text("log.ready",profiles.snapshot().size()));workers.add(offline().fillMissing());startStaging(backend);startLegacy(backend);getServer().getPluginManager().registerEvents(this,this);refreshPlan();}catch(Exception e){getLogger().error(messages.text("log.storageInitFailed"),e);getServer().getPluginManager().disablePlugin(this);}}
  private void startLegacy(Backend backend)throws Exception {
   book=dev.toka.profiles.legacy.LegacyBook.open(new StoreConfig(backend,localPath("legacy"),1));
   inheritance=new dev.toka.profiles.legacy.Inheritance(profiles,book,task->getServer().getScheduler().scheduleTask(this,task),line->getLogger().info(line),line->getLogger().warning(line));
   running=this;
-  var tidy=new Thread(this::modernizeNotes,"tokaProfiles-notes-tidy");tidy.setDaemon(true);tidy.start();
+  var tidy=new Thread(this::modernizeNotes,"tokaProfiles-notes-tidy");tidy.setDaemon(true);workers.add(tidy);tidy.start();
   welcome=new Welcome(this,messages);getServer().getPluginManager().registerEvents(welcome,this);
-  cityPass=new CityPass(this,messages);getServer().getPluginManager().registerEvents(cityPass,this);
+  forms=new Forms();getServer().getPluginManager().registerEvents(forms,this);
+  overview=new Overview(this,forms,new SoftLinks(getServer()));adminWindows=new AdminWindows(this,forms,overview);
+  cityPass=new CityPass(this,messages,forms,overview,adminWindows);getServer().getPluginManager().registerEvents(cityPass,this);
   for(Player online:getServer().getOnlinePlayers().values())cityPass.ensureItem(online);
   var notes=getDataFolder().toPath().resolve("legacy-notes.json");
   var source=getDataFolder().toPath().resolve("legacy-players.json");
   if(java.nio.file.Files.isRegularFile(source)){
-   var worker=new Thread(()->{try{getLogger().info(inheritance.importFile(source));java.nio.file.Files.move(source,source.resolveSibling("legacy-players.json.imported"),java.nio.file.StandardCopyOption.REPLACE_EXISTING);}catch(Exception error){getLogger().warning(messages.text("log.legacyImportFailed",String.valueOf(error)));}},"tokaProfiles-legacy-import");
-   worker.setDaemon(true);worker.start();
+   var worker=new Thread(()->{try{if(Thread.currentThread().isInterrupted())throw new InterruptedException();getLogger().info(inheritance.importFile(source));java.nio.file.Files.move(source,source.resolveSibling("legacy-players.json.imported"),java.nio.file.StandardCopyOption.REPLACE_EXISTING);}catch(InterruptedException stopped){Thread.currentThread().interrupt();}catch(Exception error){getLogger().warning(messages.text("log.legacyImportFailed",error.getClass().getSimpleName()));}},"tokaProfiles-legacy-import");
+   worker.setDaemon(true);workers.add(worker);worker.start();
   }
   if(java.nio.file.Files.isRegularFile(notes)){
    var worker=new Thread(()->{try{
      while(java.nio.file.Files.isRegularFile(source))Thread.sleep(500); // the players first: the notes go into their profiles
      getLogger().info(inheritance.importNotes(notes));java.nio.file.Files.move(notes,notes.resolveSibling("legacy-notes.json.imported"),java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-    }catch(Exception error){getLogger().warning(messages.text("log.legacyImportFailed",String.valueOf(error)));}},"tokaProfiles-legacy-notes");
-   worker.setDaemon(true);worker.start();
+    }catch(InterruptedException stopped){Thread.currentThread().interrupt();}catch(Exception error){getLogger().warning(messages.text("log.legacyImportFailed",error.getClass().getSimpleName()));}},"tokaProfiles-legacy-notes");
+   worker.setDaemon(true);workers.add(worker);worker.start();
   }
  }
  /** The entries of the given type in a player's note, each as its fields (with "type" and "text" too). For plugins that act on notes, by reflection. */
@@ -73,7 +94,7 @@ public final class Main extends PluginBase implements cn.nukkit.event.Listener {
  public static void onLegacyResolved(java.util.function.BiConsumer<String,java.util.UUID> listener){var self=running;if(self!=null&&self.book!=null)self.book.listen(listener);}
  @cn.nukkit.event.EventHandler public void joined(cn.nukkit.event.player.PlayerJoinEvent e){
   if(inheritance==null||profiles==null)return;var player=e.getPlayer();
-  inheritance.login(player.getUniqueId(),player.getName()).thenRun(()->{rememberIdentity(player);getServer().getScheduler().scheduleDelayedTask(this,()->welcome.offer(player,profiles),40);}).exceptionally(failure->{getLogger().warning(messages.text("log.loginFailed",player.getName(),String.valueOf(failure)));return null;});
+  inheritance.login(player.getUniqueId(),player.getName()).thenRun(()->{rememberIdentity(player);getServer().getScheduler().scheduleDelayedTask(this,()->welcome.offer(player,profiles),40);}).exceptionally(failure->{getLogger().warning(messages.text("log.loginFailed",player.getName(),failure.getClass().getSimpleName()));return null;});
  }
  /** The identities are kept in the profile, for the name tag of someone who is offline. */
  private void rememberIdentity(Player player){
@@ -99,7 +120,7 @@ public final class Main extends PluginBase implements cn.nukkit.event.Listener {
  /** Notes written as plain text by an earlier version are rewritten as entries. */
  private void modernizeNotes(){
   if(profiles==null)return;
-  for(var p:profiles.snapshot().values()){var note=p.preferences().get("note");if(note==null)continue;var now=Notes.modernized(note);if(!now.equals(note))try{profiles.put(p.withPreference("note",now)).get();}catch(Exception skip){/* tried again at the next start */}}
+  for(var p:profiles.snapshot().values()){if(Thread.currentThread().isInterrupted())return;var note=p.preferences().get("note");if(note==null)continue;var now=Notes.modernized(note);if(!now.equals(note))try{profiles.put(p.withPreference("note",now)).get();}catch(Exception skip){/* tried again at the next start */}}
  }
  /** /profiles note <player or UUID> [text|clear]: a free text about a player, for administrators. */
  private void noteCommand(CommandSender sender,String[] args){
@@ -113,7 +134,7 @@ public final class Main extends PluginBase implements cn.nukkit.event.Listener {
   if(args.length==2){var text=profile.preferences().getOrDefault("note","");sender.sendMessage(text.isBlank()?messages.text("note.none",profile.name()):messages.text("note.show",profile.name(),text));return;}
   String text=args[2].equalsIgnoreCase("clear")&&args.length==3?"":String.join(" ",java.util.Arrays.copyOfRange(args,2,args.length));
   if(text.length()>1000){sender.sendMessage(messages.text("note.tooLong"));return;}
-  repository.put(profile.withPreference("note",text)).whenComplete((done,failure)->getServer().getScheduler().scheduleTask(this,()->sender.sendMessage(failure==null?messages.text(text.isEmpty()?"note.cleared":"note.saved",profile.name()):String.valueOf(failure))));
+  repository.put(profile.withPreference("note",text)).whenComplete((done,failure)->getServer().getScheduler().scheduleTask(this,()->sender.sendMessage(failure==null?messages.text(text.isEmpty()?"note.cleared":"note.saved",profile.name()):messages.text("err.title.notSaved",failure.getClass().getSimpleName()))));
  }
  private void legacyCommand(CommandSender sender,String[] args){
   if(!sender.hasPermission("tokaProfiles.legacy")){sender.sendMessage(messages.text("err.noLegacyPermission"));return;}
@@ -121,7 +142,7 @@ public final class Main extends PluginBase implements cn.nukkit.event.Listener {
   if(args.length>=3&&args[1].equalsIgnoreCase("confirm")){
    java.util.UUID id;try{id=java.util.UUID.fromString(args[args.length-1]);}catch(IllegalArgumentException notUuid){var found=profiles().findByName(args[args.length-1]);if(found.isEmpty()){sender.sendMessage(messages.text("err.legacy.noPlayer"));return;}id=found.get().uuid();}
    String name=String.join(" ",java.util.Arrays.copyOfRange(args,2,args.length-1));
-   inheritance.confirm(name,id).whenComplete((message,failure)->getServer().getScheduler().scheduleTask(this,()->sender.sendMessage(failure==null?message:String.valueOf(failure))));return;
+   inheritance.confirm(name,id).whenComplete((message,failure)->getServer().getScheduler().scheduleTask(this,()->sender.sendMessage(failure==null?message:messages.text("err.title.notSaved",failure.getClass().getSimpleName()))));return;
   }
   var waiting=book.waiting();
   sender.sendMessage(messages.text("legacy.summary",book.size(),book.unclaimed(),waiting.size()));
@@ -147,7 +168,7 @@ public final class Main extends PluginBase implements cn.nukkit.event.Listener {
    var source=localPath(getConfig().getString("staged.source","legacy-playerData.json"));
    var evidence=new com.google.gson.JsonArray();String evidenceFile=getConfig().getString("staged.plan-evidence","");if(!evidenceFile.isBlank())evidence=com.google.gson.JsonParser.parseString(java.nio.file.Files.readString(localPath(evidenceFile))).getAsJsonArray();
    migration=dev.toka.profiles.migration.StagedProfileMigration.startAsync(source,backend,stage,getConfig().getInt("staged.batch-size",50),getConfig().getInt("staged.delay-ms",100),evidence);
-   migration.whenComplete((value,error)->{if(error!=null)getLogger().error(messages.text("log.stagedStopped"),error);else getLogger().info(messages.text("log.stagedDone",value));});
+   migration.whenComplete((value,error)->{if(error!=null)getLogger().error(messages.text("log.stagedStopped"),error);else getLogger().info(messages.text("log.stagedDone"));});
   }catch(Exception error){getLogger().error(messages.text("log.stagedNotStarted"),error);}
  }
  private void prepareMigration(Backend backend)throws Exception {
@@ -164,14 +185,24 @@ public final class Main extends PluginBase implements cn.nukkit.event.Listener {
   getConfig().set("migration.stage","imported");getConfig().set("migration.confirm",false);
   try{ConfigEdit.apply(getDataFolder().toPath().resolve("config.yml"),java.util.Map.of("migration.stage","imported","migration.confirm","false"));}catch(java.io.IOException | RuntimeException saveError){throw new IllegalStateException(messages.text("err.import.saveFailed"),saveError);}
  }
- /** Lines of help.profiles look like "tag|text": "*" is for everybody, "title" needs the title permission. */
- private void sendHelp(CommandSender sender){
-  for(String line:messages.lines("help.profiles",dev.toka.profiles.command.TitleAdmin.MAX_LENGTH)){
-   int bar=line.indexOf('|');if(bar<0){sender.sendMessage(line);continue;}
-   String tag=line.substring(0,bar);
-   if(tag.equals("*")||(tag.equals("title")&&sender.hasPermission(dev.toka.profiles.command.TitleAdmin.PERMISSION))||(tag.equals("self")&&sender.hasPermission(dev.toka.profiles.command.SelfTitle.PERMISSION)))sender.sendMessage(line.substring(bar+1));
-  }
+ /** Lines of help.profiles look like "tag|text"; the tag names the permission a line needs. Chat help is paged: /profiles help [page]. */
+ private void sendHelp(CommandSender sender,String page){
+  java.util.function.Predicate<String> allowed=tag->switch(tag){
+   case "*"->true;
+   case "self"->sender.hasPermission(dev.toka.profiles.command.SelfTitle.PERMISSION);
+   case "title"->sender.hasPermission(dev.toka.profiles.command.TitleAdmin.PERMISSION);
+   case "note"->sender.hasPermission("tokaProfiles.note");
+   case "legacy"->sender.hasPermission("tokaProfiles.legacy");
+   case "plan"->sender.hasPermission("tokaProfiles.admin");
+   default->false;};
+  for(String line:HelpPages.render(messages.lines("help.profiles",dev.toka.profiles.command.TitleAdmin.MAX_LENGTH),allowed,page,getConfig().getInt("help-lines-per-page",8),(shown,pages)->messages.text("help.footer",shown,pages)))sender.sendMessage(line);
  }
+ Messages messages(){return messages;}
+ dev.toka.profiles.legacy.LegacyBook book(){return book;}
+ dev.toka.profiles.legacy.Inheritance inheritance(){return inheritance;}
+ CityPass cityPass(){return cityPass;}
+ /** The old record an account took over, as its fields; empty when it took none. */
+ java.util.List<java.util.Map<String,String>> legacyOf(java.util.UUID uuid){var detail=legacyDetail(uuid);return detail.isEmpty()?java.util.List.of():java.util.List.of(detail);}
  private OfflineIdentities offline;
  /** Identities of people who are not online, from LuckPerms and the profile */
  public OfflineIdentities offline(){if(offline==null)offline=new OfflineIdentities(this);return offline;}
@@ -179,7 +210,8 @@ public final class Main extends PluginBase implements cn.nukkit.event.Listener {
  public void openCityPass(Player player){if(cityPass!=null)cityPass.menu(player);}
  @Override public boolean onCommand(CommandSender sender,Command command,String label,String[] args){
   if(planControl!=null&&planControl.command(sender,args,"tokaProfiles.admin"))return true;
-  if(args.length>0&&args[0].equalsIgnoreCase("help")){sendHelp(sender);return true;}
+  if(args.length>0&&args[0].equalsIgnoreCase("help")){sendHelp(sender,args.length>1?args[1]:null);return true;}
+  if(args.length>0&&args[0].equalsIgnoreCase("admin")){if(!(sender instanceof Player self)){sender.sendMessage(messages.text("err.playerOnly"));return true;}if(adminWindows==null||!AdminWindows.allowed(self)){sender.sendMessage(messages.text("err.noNotePermission"));return true;}adminWindows.open(self);return true;}
   if(args.length>0&&args[0].equalsIgnoreCase("legacy")){legacyCommand(sender,args);return true;}
   if(args.length>0&&args[0].equalsIgnoreCase("note")){noteCommand(sender,args);return true;}
   if(args.length>0&&(args[0].equalsIgnoreCase("title")||args[0].equalsIgnoreCase("titles"))){
@@ -197,8 +229,15 @@ public final class Main extends PluginBase implements cn.nukkit.event.Listener {
     .whenComplete((message,failure)->getServer().getScheduler().scheduleTask(this,()->sender.sendMessage(failure==null?message:messages.text("err.title.notSaved",failure.getMessage()))));
    return true;
   }
-  if(!(sender instanceof Player player)){sender.sendMessage(messages.text("err.playerOnly"));return true;}if(!sender.hasPermission("tokaProfiles.self"))return false;openCityPass(player);return true;}
- @Override public void onDisable(){running=null;closePlan();if(book!=null)try{book.close();}catch(Exception e){getLogger().warning(String.valueOf(e));}if(migration!=null&&!migration.isDone())migration.cancel(true);if(profiles!=null)try{profiles.close();}catch(Exception e){getLogger().error(messages.text("log.writerCloseFailed"),e);}}
+  if(!(sender instanceof Player player)){sender.sendMessage(messages.text("err.playerOnly"));return true;}if(!sender.hasPermission("tokaProfiles.self"))return false;
+  if(args.length==1&&player.hasPermission(AdminWindows.NOTE)&&overview!=null){
+   java.util.Optional<dev.toka.profiles.model.Profile> found;ProfileRepository repository;try{repository=profiles();}catch(IllegalStateException e){sender.sendMessage(messages.text("err.profilesNotReady"));return true;}
+   try{found=repository.find(java.util.UUID.fromString(args[0]));}catch(IllegalArgumentException notUuid){found=repository.findByName(args[0]);}
+   if(found.isEmpty()){sender.sendMessage(messages.text("err.legacy.noPlayer"));return true;}
+   overview.open(player,found.get().uuid(),null);return true;
+  }
+  openCityPass(player);return true;}
+ @Override public void onDisable(){running=null;DisplayLink.unregister(this);workers.forEach(Thread::interrupt);workers.clear();closePlan();if(book!=null)try{book.close();}catch(Exception e){getLogger().warning(messages.text("log.closeFailed",e.getClass().getSimpleName()));}if(migration!=null&&!migration.isDone())migration.cancel(true);if(profiles!=null)try{profiles.close();}catch(Exception e){getLogger().error(messages.text("log.writerCloseFailed"),e);}}
  private void closePlan(){if(planControl!=null)planControl.registered(false);if(plan!=null)try{plan.close();}catch(Exception|LinkageError e){getLogger().warning(messages.text("plan.unavailable",e.getClass().getSimpleName()));}finally{plan=null;}}
  private void refreshPlan(){closePlan();
   if(planControl==null)planControl=new dev.toka.profiles.plan.PlanControl(this,this::refreshPlan,()->java.util.Set.of("exists","title","count"),(key,args)->messages.text(key,args),"profiles");var plugin=getServer().getPluginManager().getPlugin("Plan");

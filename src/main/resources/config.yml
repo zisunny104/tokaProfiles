@@ -6,6 +6,8 @@
 # 顯示語言，決定 lang/<語言>.yml 的文字。目前提供：zh-TW（繁體中文）。
 # 伺服器擁有者可在 plugins/tokaProfiles/lang/ 放同名檔案覆蓋個別文字。
 language: zh-TW
+# /profiles help 每頁行數（3 以上的整數）
+help-lines-per-page: 8
 
 # 玩家資料的儲存方式
 storage:

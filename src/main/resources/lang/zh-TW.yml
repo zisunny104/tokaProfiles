@@ -19,24 +19,43 @@ cmd:
     usageTitle: "/profiles title <玩家名稱或 UUID> [稱號 | clear]"
 
 # ───────────────────────── /profiles help（help） ─────────────────────────
-# help.profiles：每行格式為「標籤|內容」，依權限過濾後顯示（標籤與 | 不會顯示）：
+# help.profiles：每行格式為「標籤|內容」，依權限過濾後分頁顯示（標籤與 | 不會顯示）：
 #   *       所有人都顯示
-#   title   需要 tokaProfiles.title.admin 權限
 #   self    需要 tokaProfiles.title.self 權限
-# ${0}＝稱號長度上限（目前 255）
+#   title   需要 tokaProfiles.title.admin 權限
+#   note    需要 tokaProfiles.note 權限
+#   legacy  需要 tokaProfiles.legacy 權限
+#   plan    需要 tokaProfiles.admin 權限
+# 第一頁是一般玩家最常用的，主題各自用一行說明開頭。${0}＝稱號長度上限（目前 255）
 help:
+  footer: "§7第 §a${0}§7/§a${1}§7 頁，用 §e/profiles help <頁碼>§7 換頁"
   profiles:
-    - "*|§6=== §f§ltokaProfiles 說明§r §6=== §7（別名 /profile；<必填>、[選填]）"
-    - "*|§e/profiles §7- §b開啟城市通（個人資料，限遊戲內玩家）"
-    - "*|§e/profiles help §7- §b顯示此說明"
+    - "*|§6=== §f§ltokaProfiles 說明§r §6=== §7（<必填>、[選填]）"
+    - "*|§e/profiles §7- §b開啟城市通（個人總覽、傳送、錢包、領地），限遊戲內玩家"
+    - "*|§e/profiles help [頁] §7- §b顯示此說明"
+    - "self|§b自己的稱號（需要 tokaProfiles.title.self）："
     - "self|§e/profiles mytitle §7- §b查看自己的稱號"
-    - "self|§e/profiles mytitle <稱號> §7- §b設定自己的稱號（有長度限制與等待時間；色碼需要另外的權限，用 & 代替 §）"
+    - "self|§e/profiles mytitle <稱號> §7- §b設定自己的稱號（有長度限制與等待時間；色碼需要 tokaProfiles.title.color，用 & 代替 §）"
     - "self|§e/profiles mytitle clear §7- §b清除自己的稱號"
+    - "title|§b玩家稱號（管理員，需要 tokaProfiles.title.admin）："
     - "title|§e/profiles title <玩家名稱或 UUID> §7- §b查看該玩家目前的稱號"
     - "title|§e/profiles title <玩家名稱或 UUID> <稱號> §7- §b設定稱號（可含空白與 § 色碼，最長 ${0} 個字元，不可含控制字元）"
     - "title|§e/profiles title <玩家名稱或 UUID> clear §7- §b清除稱號"
     - "title|§7/profiles titles 與 /profiles title 相同；名稱對應多位玩家時用 UUID"
-    - "title|§6§l遷移與盤點工具 §7（命令列 java -cp tokaProfiles-<版本>.jar 執行，需先停服）"
+    - "note|§b備註與總覽（管理員，需要 tokaProfiles.note）："
+    - "note|§e/profiles <玩家名稱或 UUID> §7- §b開啟該玩家的個人總覽，含備註與舊名稱"
+    - "note|§e/profiles admin §7- §b開啟管理視窗：備註、舊名稱、玩家總覽"
+    - "note|§e/profiles note <玩家名稱或 UUID> §7- §b查看備註"
+    - "note|§e/profiles note <玩家名稱或 UUID> <文字> §7- §b以文字取代整份備註（最長 1000 字）"
+    - "note|§e/profiles note <玩家名稱或 UUID> clear §7- §b清除備註"
+    - "legacy|§b舊名稱（管理員，需要 tokaProfiles.legacy）："
+    - "legacy|§e/profiles legacy [list] §7- §b列出舊名稱的筆數與等待確認的名稱"
+    - "legacy|§e/profiles legacy confirm <舊名稱> <玩家名稱或 UUID> §7- §b確認舊名稱歸屬於該玩家"
+    - "plan|§b Plan 展示（管理員，需要 tokaProfiles.admin）："
+    - "plan|§e/profiles plan status §7- §b查看 Plan 展示設定"
+    - "plan|§e/profiles plan mode <auto|enable|disable> §7- §b設定 Plan 展示模式"
+    - "plan|§e/profiles plan fields <all|none|欄位...> §7- §b設定要展示的欄位（exists、title、count）"
+    - "title|§b遷移與盤點工具（管理員）：命令列 java -cp tokaProfiles-<版本>.jar 執行，需先停服"
     - "title|§edev.toka.profiles.migration.StagedProfileMigration stage <來源.json> <sqlite|json|yaml> <新stage目錄> [批次筆數 間隔毫秒 [Plan證據.json]] §7- §b背景分批搬遷到獨立資料集，不啟用正式資料"
     - "title|§edev.toka.profiles.migration.StagedProfileMigration verify <stage目錄> <目前來源.json> <sqlite|json|yaml> §7- §b重啟前驗證 stage 與目前來源一致，不執行切換"
     - "title|§edev.toka.profiles.migration.ProfileMigration import <來源.json> <sqlite|json|yaml> <新資料目錄> <備份目錄> §7- §b離線一次性匯入並備份、讀回比對"
@@ -107,30 +126,136 @@ err:
 
 # ───────────────────────── 表單與命令列提示（ui） ─────────────────────────
 ui:
-  cityPass:
-    # 城市通表單標題
-    title: "城市通"
-    # 內容；${0}＝玩家名稱，${1}＝識別碼（profileId）。表單內不使用色碼
-    content: "玩家：${0}\n識別碼：${1}"
-    # 找不到玩家資料時的內容
-    noData: "尚未完成玩家資料搬遷。"
-    close: "關閉"
+  back: "返回"
+  cancel: "§c取消"
   # 命令列匯出工具要求輸入資料庫密碼時的提示
   passwordPrompt: "資料庫密碼："
+  overview:
+    heading: "個人總覽"
+    # ${0}＝玩家名稱
+    headingOf: "${0} 的總覽"
+    none: "無"
+    online: "線上"
+    sec:
+      base: "基本"
+      wallet: "錢包"
+      checkin: "簽到"
+      land: "領地"
+      discord: "Discord"
+      notes: "備註"
+      legacy: "舊名稱"
+      flow: "收支"
+      trend: "餘額走勢"
+    id: "識別碼：${0}"
+    aliases: "曾用名：${0}"
+    name: "名稱：${0}"
+    title: "稱號：${0}"
+    identity: "身分：${0}"
+    household: "戶籍：${0}"
+    chat: "聊天顯示：${0}"
+    first: "首次加入：${0}"
+    last: "最後上線：${0}"
+    money: "${0}：${1}"
+    streak: "連續 ${0} 天，累計 ${1} 次"
+    lastDay: "最後簽到：${0}"
+    land: "領地 ${0} 塊，租用 ${1} 筆"
+    discord:
+      linked: "已連結"
+      none: "尚未連結"
+      hint: "遊戲輸入 /discord link 取得代碼，再到 Discord 輸入 /link code:代碼"
+    # ${0}＝舊名稱 ${1}＝村 ${2}＝Discord ${3}＝舊稱號
+    legacy: "${0}（村：${1}，Discord：${2}，稱號：${3}）"
+    btn:
+      title: "修改稱號"
+      stats: "統計"
+      wallet: "錢包"
+      land: "領地"
+      checkin: "簽到"
+  stats:
+    # ${0}＝玩家名稱
+    heading: "${0} 的統計"
+    empty: "還沒有可以統計的資料"
+    streak: "連續簽到 ${0}/${1} 天"
+    week: "近 7 天簽到"
+    flowDays: "近 ${0} 天的收支（主要貨幣）"
+    income: "收入"
+    expense: "支出"
+    net: "淨變化：${0}"
+    trendPoints: "最近 ${0} 筆之後的餘額（舊到新）"
+    # ${0}＝領地類型 ${1}＝塊數
+    landType: "${0} ${1} 塊"
+    landTotal: "總面積：${0} 格"
+    # ${0}＝要切換到的天數
+    range: "改看近 ${0} 天"
+  admin:
+    title: "管理"
+    btnNotes: "備註"
+    btnOverview: "玩家總覽"
+    btnLegacy: "舊名稱"
+    accept: "§b確認"
+    pick:
+      title: "選擇玩家"
+      hint: "搜尋可縮小線上名單；離線玩家請輸入名稱或 UUID。"
+      search: "搜尋線上玩家"
+      searchHint: "名稱的一部分"
+      online: "線上玩家"
+      none: "（不選）"
+      offline: "離線玩家名稱或 UUID"
+      offlineHint: "有填寫時優先使用"
+      missing: "§c請選擇或輸入一位玩家"
+    notes:
+      # ${0}＝玩家名稱
+      title: "${0} 的備註"
+      current: "目前的備註"
+      # ${0}＝長度上限
+      hint: "新增的一行會接在備註後面，整份最長 ${0} 字。"
+      add: "新增一行"
+      addHint: "例如 贊助或提醒事項"
+      clear: "清除整份備註"
+      clearTitle: "清除備註"
+      clearAsk: "要清除 ${0} 的整份備註嗎？"
+    legacy:
+      title: "舊名稱"
+      # ${0}＝總筆數 ${1}＝尚未取回 ${2}＝等待確認
+      summary: "舊名稱共 ${0} 筆，尚未取回 ${1} 筆，等管理員確認 ${2} 筆"
+      query: "搜尋舊名稱"
+      queryHint: "名稱的一部分，留空列出全部"
+      list: "等待確認的舊名稱"
+      none: "沒有符合的舊名稱"
+      # ${0}＝顯示筆數 ${1}＝列出筆數
+      more: "共 ${0} 筆，只列出前 ${1} 筆，請縮小搜尋"
+      # ${0}＝舊名稱 ${1}＝想取回的帳號數
+      item: "${0}（${1} 個帳號）"
+      # ${0}＝舊名稱
+      detail: "舊名稱 ${0}"
+      name: "舊名稱：${0}"
+      village: "村：${0}"
+      discord: "Discord：${0}"
+      oldTitle: "舊稱號：${0}"
+      owner: "舊資料的帳號：${0}"
+      # ${0}＝玩家名稱
+      confirm: "確認給 ${0}"
+      other: "指定其他玩家"
+      askTitle: "確認舊名稱歸屬"
+      # ${0}＝舊名稱 ${1}＝玩家名稱 ${2}＝UUID
+      ask: "舊名稱：${0}\n玩家：${1}\nUUID：${2}\n確認後這個名稱就永遠屬於這個帳號。"
 
 # ───────────────────────── 後台文字（log） ─────────────────────────
 log:
   # 啟動完成；${0}＝玩家資料筆數
-  ready: "§btokaProfiles 就緒：§a${0} §b筆玩家資料"
-  storageInitFailed: "§ctokaProfiles 儲存初始化失敗"
+  ready: "§b玩家資料就緒：§a${0} §b筆"
+  storageInitFailed: "§c儲存初始化失敗"
   activationFailed: "§e待啟用資料驗證失敗，繼續使用原資料來源"
-  stagedStopped: "§c背景搬遷停止；有效資料未切換"
-  # ${0}＝搬遷結果摘要（狀態、來源筆數、通過筆數、衝突數…）
-  stagedDone: "§a背景搬遷完成：§b${0}§a；需停服更新來源與確認後才切換"
-  stagedNotStarted: "§c背景搬遷未啟動；有效資料未切換"
-  legacyImportFailed: "§c舊玩家資料匯入失敗：${0}"
-  loginFailed: "§e玩家 ${0} 的檔案處理失敗：${1}"
+  stagedStopped: "§c背景搬遷停止，有效資料未切換"
+  stagedDone: "§b背景搬遷完成，停服更新來源後才會切換"
+  stagedNotStarted: "§c背景搬遷未啟動，有效資料未切換"
+  # ${0}＝例外類別
+  legacyImportFailed: "§c舊玩家資料匯入失敗：§a${0}"
+  # ${0}＝玩家 ${1}＝例外類別
+  loginFailed: "§e玩家 §a${0} §e的檔案處理失敗：§a${1}"
   writerCloseFailed: "§e玩家資料寫入器未能正常關閉"
+  closeFailed: "§e舊名稱資料未能正常關閉：§a${0}"
+  displayOld: "§etokaDisplay 版本太舊，稱號不會顯示在名稱標籤"
   # 寫進 stage 目錄 NOTICE.txt 的內容（給管理員看的檔案，不含色碼）
   stageNotice: "私人搬遷快照。不可加入 Git。ready 不代表正式資料已切換；線上來源仍須停服後補齊差異。"
 
@@ -165,7 +290,7 @@ welcome:
 ‧ 不使用外掛或非法物品
 ‧ 不向管理員要權限
 ‧ 說話文明、不刷屏
-違規會依情節警告、扣除物資或封禁；有疑問或要申訴，請在十日內聯絡管理員。
+違規會依情節警告、扣除物資或封禁；有疑問或要申訴，請到 Discord 群組回報。
 
 §a準備好了就出發吧，玩得開心！§r"
   next: "下一頁 §8›"
@@ -175,35 +300,34 @@ welcome:
 # 城市通：玩家身上的指南針與它開的選單。文字簡短；按鈕只用淡淡的灰色箭頭或符號當方向提示。
 citypass:
   inventoryFull: "背包已滿，騰出一格後重新登入就會補發城市通。"
-  back: "§8‹ §r返回"
-  close: "§8× §r關閉"
+  back: "返回"
+  close: "§c關閉"
   none: "無"
   main:
     title: "城市通"
-    body: ""
     teleport: "傳送系統"
     wallet: "經濟系統"
     shop: "商店"
     land: "領地管理"
-    profile: "資料管理"
+    profile: "個人總覽"
     status: "伺服狀態"
     help: "幫助頁面"
-  profile:
-    title: "個人資料"
-    # ${0}＝名稱、${1}＝稱號、${2}＝戶籍、${3}＝身分
-    body: "名稱：${0}\n稱號：${1}\n戶籍：${2}\n身分：${3}"
-    editTitle: "修改稱號"
+    admin: "管理"
   titleEdit:
     title: "修改稱號"
-    label: "新稱號（留空就是清除）"
-    placeholder: "最長 16 個字"
+    current: "目前的稱號"
+    # ${0}＝長度上限
+    limit: "最長 ${0} 個字。"
+    limitColour: "最長 ${0} 個字（不含色碼），色碼用 & 代替 §。"
+    label: "新稱號"
+    placeholder: "最長 ${0} 個字"
+    clear: "清除稱號"
   status:
     title: "伺服器狀態"
     # ${0}＝在線、${1}＝上限、${2}＝TPS、${3}＝已用／上限記憶體、${4}＝現在時間
     body: "線上玩家：${0}/${1}\nTPS：${2}\n記憶體：${3} MB\n時間：${4}"
   help:
     title: "使用說明"
-    body: "想知道哪一塊，點進去看看。"
     teleport:
       label: "傳送"
       title: "傳送"
@@ -228,7 +352,7 @@ citypass:
     profile:
       label: "個人與 Discord"
       title: "個人與 Discord"
-      body: "城市通的「資料管理」可以看到名稱、稱號、戶籍與身分，稱號可以自己改。
+      body: "城市通的「個人總覽」可以看到名稱、稱號、戶籍、身分、錢包、簽到與領地，稱號可以自己改。
 歡迎加入我們的 Discord；綁定後能在 Discord 與遊戲裡互通聊天、用指令。
 綁定：遊戲輸入 /discord link 取得代碼，再到 Discord 輸入 /link code:代碼。"
     rules:
@@ -242,7 +366,7 @@ citypass:
 ‧ 不使用外掛或非法物品
 ‧ 不向管理員要權限
 ‧ 說話文明、不刷屏
-有疑問或要申訴，請在十日內聯絡管理員。"
+有疑問或要申訴，請到 Discord 群組回報。"
   identity:
     admin: "管理員"
     sponsor: "贊助者"
@@ -255,9 +379,6 @@ note:
   saved: "§7[玩家資料]§r §a已儲存 ${0} 的備註"
   cleared: "§7[玩家資料]§r §a已清除 ${0} 的備註"
   tooLong: "§7[玩家資料]§r §c備註最長 1000 字"
-  donationUsage: "§7用法：/profiles donation <玩家或 UUID> <金額> [說明]"
-  # ${0}＝玩家、${1}＝金額
-  donationSaved: "§7[玩家資料]§r §a已記下 ${0} 的贊助 ${1}，獎勵由 tokaRewards 發放"
 legacy:
   summary: "§b舊名稱共 §a${0} §b筆，尚未取回 §a${1} §b筆，等管理員確認 §a${2} §b筆"
   waiting: "§e${0} §7- 有這些帳號想取回：${1}（/profiles legacy confirm ${0} <玩家或 UUID>）"
@@ -268,15 +389,15 @@ status:
   noTitle: "（沒有）"
 
 plan:
-  missing: '已要求啟用 Plan，但 Plan 尚未就緒；/${0} plan mode auto 可改為自動偵測。'
-  detected: '已偵測到 Plan，目前模式 ${0}；/${1} plan status 可查看設定。'
-  configureFailed: 'Plan 設定未完成：${0}。'
+  missing: '§e已要求啟用 Plan，但 Plan 尚未就緒；/${0} plan mode auto 可改為自動偵測。'
+  detected: '§b已偵測到 Plan，目前模式 §a${0}§b；/${1} plan status 可查看設定。'
+  configureFailed: '§ePlan 設定未完成：§a${0}'
   noPermission: '§c沒有管理 Plan 展示的權限。'
   configured: '§aPlan 設定已儲存；/${0} plan status 可查看。'
   usage: '§e/${0} plan status | mode <auto|enable|disable> | fields <all|none|欄位...>'
   exists: '已有玩家資料'
   title: '玩家稱號'
   count: '正式玩家資料筆數'
-  ready: 'Plan 玩家資訊整合已啟用。'
-  unsupported: 'Plan 缺少 DataExtension Builder API，已略過玩家資訊整合。'
-  unavailable: 'Plan 玩家資訊整合暫時不可用：${0}'
+  ready: '§bPlan 玩家資訊整合已啟用'
+  unsupported: '§ePlan 缺少 DataExtension Builder API，已略過玩家資訊整合'
+  unavailable: '§ePlan 玩家資訊整合暫時不可用：§a${0}'

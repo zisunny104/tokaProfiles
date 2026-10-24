@@ -8,17 +8,15 @@ import cn.nukkit.event.inventory.InventoryClickEvent;
 import cn.nukkit.event.inventory.InventoryMoveItemEvent;
 import cn.nukkit.event.inventory.InventoryTransactionEvent;
 import cn.nukkit.event.player.PlayerDropItemEvent;
-import cn.nukkit.event.player.PlayerFormRespondedEvent;
 import cn.nukkit.event.player.PlayerInteractEvent;
 import cn.nukkit.event.player.PlayerJoinEvent;
-import cn.nukkit.event.player.PlayerQuitEvent;
-import cn.nukkit.form.element.ElementButton;
+import cn.nukkit.form.element.ElementDivider;
 import cn.nukkit.form.element.ElementInput;
-import cn.nukkit.form.response.FormResponseCustom;
-import cn.nukkit.form.response.FormResponseSimple;
-import cn.nukkit.form.window.FormWindow;
+import cn.nukkit.form.element.ElementHeader;
+import cn.nukkit.form.element.ElementLabel;
+import cn.nukkit.form.element.ElementToggle;
 import cn.nukkit.form.window.FormWindowCustom;
-import cn.nukkit.form.window.FormWindowSimple;
+import cn.nukkit.event.player.PlayerQuitEvent;
 import cn.nukkit.inventory.transaction.action.DropItemAction;
 import cn.nukkit.item.Item;
 import cn.nukkit.item.ItemID;
@@ -29,12 +27,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Consumer;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * The city pass: a compass every player carries, and the menu it opens. The menu only sends people on to the plugin that does the
  * thing (teleport, wallet, land); what it shows itself is short and plain: who you are, how the server is, how to get started.
- * Buttons are plain words, no symbols or colours, and every page has the same way back.
+ * Every button has an icon; the close button is red; pages that lead somewhere start with the way back.
  */
 final class CityPass implements Listener {
     static final String ITEM_NAME = "§b⦋城市通⦌§r", OLD_ITEM_NAME = "§b[城市通]";
@@ -42,15 +41,18 @@ final class CityPass implements Listener {
 
     private final Main plugin;
     private final Messages messages;
-    /** What each button of the page a player has open does, in order. */
-    private final Map<UUID, Screen> open = new ConcurrentHashMap<>();
     private final Map<UUID, Long> lastUse = new ConcurrentHashMap<>();
 
-    private record Screen(String title, List<String> actions) {}
+    private final Forms forms;
+    private final Overview overview;
+    private final AdminWindows admin;
 
-    CityPass(Main plugin, Messages messages) {
+    CityPass(Main plugin, Messages messages, Forms forms, Overview overview, AdminWindows admin) {
         this.plugin = plugin;
         this.messages = messages;
+        this.forms = forms;
+        this.overview = overview;
+        this.admin = admin;
     }
 
     private String text(String key, Object... args) { return messages.text(key, args); }
@@ -96,7 +98,7 @@ final class CityPass implements Listener {
         plugin.getServer().getScheduler().scheduleDelayedTask(plugin, () -> plugin.getServer().getOnlinePlayers().values().forEach(this::ensureItem), 2);
     }
 
-    @EventHandler public void onQuit(PlayerQuitEvent event) { open.remove(event.getPlayer().getUniqueId()); lastUse.remove(event.getPlayer().getUniqueId()); }
+    @EventHandler public void onQuit(PlayerQuitEvent event) { lastUse.remove(event.getPlayer().getUniqueId()); }
 
     @EventHandler public void onInteract(PlayerInteractEvent event) {
         if (!isPass(event.getItem())) return;
@@ -119,46 +121,26 @@ final class CityPass implements Listener {
 
     // ---- the pages ----
 
-    private void show(Player player, String key, String body, List<String> labels, List<String> actions) {
-        String title = text("citypass." + key + ".title");
-        var form = new FormWindowSimple(title, body);
-        labels.forEach(label -> form.addButton(new ElementButton(label)));
-        open.put(player.getUniqueId(), new Screen(title, actions));
-        player.showFormWindow(form);
+    private static final String ICON_PORTAL = "textures/items/compass_item", ICON_WALLET = "textures/items/gold_ingot", ICON_SHOP = "textures/items/emerald",
+            ICON_LAND = "textures/items/map_filled", ICON_PROFILE = "textures/items/name_tag", ICON_STATUS = "textures/items/clock_item",
+            ICON_HELP = "textures/items/book_written", ICON_ADMIN = "textures/items/diamond", ICON_CLOSE = "textures/ui/cancel", ICON_BACK = "textures/ui/arrow_left",
+            ICON_TITLE = "textures/items/name_tag";
+
+    private Forms.Item command(String label, String icon, String command) {
+        return Forms.Item.of(label, icon, p -> plugin.getServer().dispatchCommand(p, command));
     }
+
+    private Forms.Item back(Consumer<Player> target) { return Forms.Item.of(text("citypass.back"), ICON_BACK, target); }
 
     void menu(Player player) {
-        var labels = new ArrayList<>(List.of(text("citypass.main.teleport"), text("citypass.main.wallet"), text("citypass.main.shop"), text("citypass.main.land"),
-                text("citypass.main.profile"), text("citypass.main.status"), text("citypass.main.help")));
-        var actions = new ArrayList<>(List.of("command:portal", "command:balance", "command:shop", "command:land menu", "profile", "status", "help"));
-        labels.add(text("citypass.close"));
-        actions.add("close");
-        show(player, "main", text("citypass.main.body"), labels, actions);
-    }
-
-    private void profile(Player player) {
-        var found = plugin.profiles().find(player.getUniqueId());
-        String title = found.map(p -> p.title().isEmpty() ? text("citypass.none") : p.title()).orElse(text("citypass.none"));
-        String household = householdName(player);
-        String body = text("citypass.profile.body", player.getName(), title, household == null ? text("citypass.none") : household, identity(player));
-        var labels = new ArrayList<String>();
-        var actions = new ArrayList<String>();
-        if (player.hasPermission("tokaProfiles.title.self")) { labels.add(text("citypass.profile.editTitle")); actions.add("editTitle"); }
-        labels.add(text("citypass.back")); actions.add("menu");
-        show(player, "profile", body, labels, actions);
-    }
-
-    /** The household in tokaRegions, in its colour; null without it or without a household. */
-    private String householdName(Player player) {
-        var regions = plugin.getServer().getPluginManager().getPlugin("tokaRegions");
-        if (regions == null || !regions.isEnabled()) return null;
-        try { return (String) regions.getClass().getMethod("householdNameOf", UUID.class).invoke(null, player.getUniqueId()); }
-        catch (ReflectiveOperationException | LinkageError unavailable) { return null; }
-    }
-
-    private String identity(Player player) {
-        var ids = DisplayLink.identityIds(player::hasPermission);
-        return ids.isEmpty() ? text("citypass.identity.ordinary") : String.join("、", ids.stream().map(id -> text("citypass.identity." + id)).toList());
+        var items = new ArrayList<Forms.Item>(List.of(
+                command(text("citypass.main.teleport"), ICON_PORTAL, "portal"), command(text("citypass.main.wallet"), ICON_WALLET, "balance"),
+                command(text("citypass.main.shop"), ICON_SHOP, "shop"), command(text("citypass.main.land"), ICON_LAND, "land menu"),
+                Forms.Item.of(text("citypass.main.profile"), ICON_PROFILE, p -> overview.open(p, p.getUniqueId(), this::menu)),
+                Forms.Item.of(text("citypass.main.status"), ICON_STATUS, this::status), Forms.Item.of(text("citypass.main.help"), ICON_HELP, this::help)));
+        if (AdminWindows.allowed(player)) items.add(Forms.Item.of(text("citypass.main.admin"), ICON_ADMIN, admin::open));
+        items.add(Forms.Item.of(text("citypass.close"), ICON_CLOSE, p -> { }));
+        forms.menu(player, text("citypass.main.title"), "", items);
     }
 
     private void status(Player player) {
@@ -166,59 +148,37 @@ final class CityPass implements Listener {
         Runtime runtime = Runtime.getRuntime();
         long used = (runtime.totalMemory() - runtime.freeMemory()) >> 20, max = runtime.maxMemory() >> 20;
         String body = text("citypass.status.body", server.getOnlinePlayers().size(), server.getMaxPlayers(), (int) server.getTicksPerSecond(), used + "/" + max, LocalDateTime.now().format(TIME));
-        show(player, "status", body, List.of(text("citypass.back")), List.of("menu"));
+        forms.menu(player, text("citypass.status.title"), body, List.of(back(this::menu)));
     }
 
     private static final List<String> SECTIONS = List.of("teleport", "land", "wallet", "shop", "profile", "rules");
 
     private void help(Player player) {
-        var labels = new ArrayList<String>();
-        var actions = new ArrayList<String>();
-        for (String section : SECTIONS) { labels.add(text("citypass.help." + section + ".label")); actions.add("help:" + section); }
-        labels.add(text("citypass.back"));
-        actions.add("menu");
-        show(player, "help", text("citypass.help.body"), labels, actions);
+        var items = new ArrayList<Forms.Item>();
+        items.add(back(this::menu));
+        for (String section : SECTIONS) items.add(Forms.Item.of(text("citypass.help." + section + ".label"), ICON_HELP, p -> helpSection(p, section)));
+        forms.menu(player, text("citypass.help.title"), "", items);
     }
 
     private void helpSection(Player player, String section) {
-        show(player, "help." + section, text("citypass.help." + section + ".body"), List.of(text("citypass.back")), List.of("help"));
+        forms.menu(player, text("citypass.help." + section + ".title"), text("citypass.help." + section + ".body"), List.of(back(this::help)));
     }
 
-    private void editTitle(Player player) {
-        String title = text("citypass.titleEdit.title");
-        var form = new FormWindowCustom(title);
-        form.addElement(new ElementInput(text("citypass.titleEdit.label"), text("citypass.titleEdit.placeholder")));
-        open.put(player.getUniqueId(), new Screen(title, List.of("titleSubmit")));
-        player.showFormWindow(form);
-    }
-
-    @EventHandler public void onForm(PlayerFormRespondedEvent event) {
-        Player player = event.getPlayer();
-        Screen screen = open.get(player.getUniqueId());
-        FormWindow window = event.getWindow();
-        String shown = window instanceof FormWindowSimple simple ? simple.getTitle() : window instanceof FormWindowCustom custom ? custom.getTitle() : null;
-        if (screen == null || shown == null || !shown.equals(screen.title())) return;
-        open.remove(player.getUniqueId());
-        if (event.wasClosed() || event.getResponse() == null) return;
-        String action;
-        if (event.getResponse() instanceof FormResponseSimple simple) {
-            int id = simple.getClickedButtonId();
-            if (id < 0 || id >= screen.actions().size()) return;
-            action = screen.actions().get(id);
-        } else if (event.getResponse() instanceof FormResponseCustom custom) {
-            String typed = custom.getInputResponse(0) == null ? "" : custom.getInputResponse(0).strip();
-            plugin.getServer().dispatchCommand(player, "profiles mytitle " + (typed.isEmpty() ? "clear" : typed));
-            return;
-        } else return;
-        if (action.startsWith("command:")) { plugin.getServer().dispatchCommand(player, action.substring("command:".length())); return; }
-        if (action.startsWith("help:")) { helpSection(player, action.substring(5)); return; }
-        switch (action) {
-            case "menu" -> menu(player);
-            case "profile" -> profile(player);
-            case "status" -> status(player);
-            case "help" -> help(player);
-            case "editTitle" -> editTitle(player);
-            default -> { /* close */ }
-        }
+    /** The title form: the current title, the limit, the new title and a switch that clears it. Both ways go through /profiles mytitle. */
+    void editTitle(Player player) {
+        int limit = plugin.getConfig().getInt("title.self.max-length", 16);
+        String current = plugin.profiles().find(player.getUniqueId()).map(p -> p.title()).orElse("");
+        var form = new FormWindowCustom(text("citypass.titleEdit.title"));
+        form.addElement(new ElementHeader(text("citypass.titleEdit.current")));
+        form.addElement(new ElementLabel(current.isEmpty() ? text("citypass.none") : current));
+        form.addElement(new ElementDivider());
+        form.addElement(new ElementLabel(text(player.hasPermission(dev.toka.profiles.command.SelfTitle.COLOR_PERMISSION) ? "citypass.titleEdit.limitColour" : "citypass.titleEdit.limit", limit)));
+        form.addElement(new ElementInput(text("citypass.titleEdit.label"), text("citypass.titleEdit.placeholder", limit), current));
+        form.addElement(new ElementToggle(text("citypass.titleEdit.clear"), false));
+        forms.custom(player, form, response -> {
+            String typed = Forms.input(response, 4);
+            if (Boolean.TRUE.equals(response.getToggleResponse(5))) plugin.getServer().dispatchCommand(player, "profiles mytitle clear");
+            else if (!typed.isEmpty() && !typed.equals(current)) plugin.getServer().dispatchCommand(player, "profiles mytitle " + typed);
+        }, p -> { });
     }
 }

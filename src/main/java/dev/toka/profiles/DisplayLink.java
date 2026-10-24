@@ -48,6 +48,30 @@ final class DisplayLink {
         return String.join(",", identityIds(has));
     }
 
+    /** The tag of each identity as configured (identity.tags.*), with its default. */
+    static java.util.Map<String, String> tags(Main profiles) {
+        var tags = new java.util.HashMap<String, String>();
+        var defaults = java.util.Map.of("admin", "§b[管]", "sponsor", "§e[特]", "linked", "", "ordinary", "§6[普]");
+        for (String id : defaults.keySet()) tags.put(id, profiles.getConfig().getString("identity.tags." + id, defaults.get(id)));
+        return tags;
+    }
+
+    /** What the name tag of a player reads: the identity tags, the title with its separator, then the name. */
+    static String nameTag(java.util.List<String> ids, java.util.Map<String, String> tags, String title, String suffix, String name) {
+        String prefix = identity(node -> ids.contains(node.substring("toka.identity.".length())), tags);
+        return prefix + text(title, suffix) + "§r" + name;
+    }
+
+    /** Takes the name tag parts back from tokaDisplay: a reload would otherwise leave two of each, one of them from the old instance. */
+    static void unregister(Main profiles) {
+        Plugin display = profiles.getServer().getPluginManager().getPlugin("tokaDisplay");
+        if (display == null || !display.isEnabled()) return;
+        try {
+            Class<?> api = Class.forName("dev.toka.display.Main", true, display.getClass().getClassLoader());
+            api.getMethod("unregisterNameTagParts", String.class).invoke(null, profiles.getName());
+        } catch (ReflectiveOperationException | LinkageError older) { /* nothing was registered by an older display */ }
+    }
+
     private static final long SETTLE_MILLIS = 30_000;
 
     /** Registers the "title" part with tokaDisplay if it is running; safe to call again. */
@@ -62,9 +86,7 @@ final class DisplayLink {
             };
             api.getMethod("registerNameTagPart", String.class, String.class, BiFunction.class).invoke(null, profiles.getName(), "title", title);
             final long since = System.currentTimeMillis();
-            var tags = new java.util.HashMap<String, String>();
-            var defaults = java.util.Map.of("admin", "§b[管]", "sponsor", "§e[特]", "linked", "", "ordinary", "§6[普]");
-            for (String id : defaults.keySet()) tags.put(id, profiles.getConfig().getString("identity.tags." + id, defaults.get(id)));
+            var tags = tags(profiles);
             BiFunction<UUID, Player, String> identity = (id, online) -> {
                 // Right after a reload the permissions of the players who are online are not attached yet: for a short while a player
                 // who shows no identity at all is shown as the profile remembers them, like someone who is offline.
@@ -80,7 +102,7 @@ final class DisplayLink {
             };
             api.getMethod("registerNameTagPart", String.class, String.class, BiFunction.class).invoke(null, profiles.getName(), "prefix", identity);
         } catch (ReflectiveOperationException | LinkageError older) {
-            profiles.getLogger().warning("tokaDisplay 不支援名稱標籤片段（需要 0.4.0 以上）；稱號不會顯示在名稱標籤。");
+            profiles.getLogger().warning(profiles.messages().text("log.displayOld"));
         }
     }
 }
