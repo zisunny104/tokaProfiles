@@ -164,7 +164,7 @@ final class CityPass implements Listener {
         forms.menu(player, text("citypass.help." + section + ".title"), text("citypass.help." + section + ".body"), List.of(back(this::help)));
     }
 
-    /** The title form: the current title, the limit, the new title and a switch that clears it. Both ways go through /profiles mytitle. */
+    /** The title form: the current title, the limit, the new title and a switch that clears it. Both ways go through /profile mytitle. */
     void editTitle(Player player) {
         int limit = plugin.getConfig().getInt("title.self.max-length", 16);
         String current = plugin.profiles().find(player.getUniqueId()).map(p -> p.title()).orElse("");
@@ -177,8 +177,8 @@ final class CityPass implements Listener {
         form.addElement(new ElementToggle(text("citypass.titleEdit.clear"), false));
         forms.custom(player, form, response -> {
             String typed = Forms.input(response, 4);
-            if (Boolean.TRUE.equals(response.getToggleResponse(5))) plugin.getServer().dispatchCommand(player, "profiles mytitle clear");
-            else if (!typed.isEmpty() && !typed.equals(current)) plugin.getServer().dispatchCommand(player, "profiles mytitle " + typed);
+            if (Boolean.TRUE.equals(response.getToggleResponse(5))) plugin.getServer().dispatchCommand(player, "profile mytitle clear");
+            else if (!typed.isEmpty() && !typed.equals(current)) plugin.getServer().dispatchCommand(player, "profile mytitle " + typed);
         }, p -> { });
     }
 }

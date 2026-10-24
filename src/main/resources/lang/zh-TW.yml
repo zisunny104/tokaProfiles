@@ -15,10 +15,10 @@
 # ───────────────────────── 指令說明與用法（cmd） ─────────────────────────
 cmd:
   profiles:
-    # /profiles title 的用法
-    usageTitle: "/profiles title <玩家名稱或 UUID> [稱號 | clear]"
+    # /profile title 的用法
+    usageTitle: "/profile title <玩家名稱或 UUID> [稱號 | clear]"
 
-# ───────────────────────── /profiles help（help） ─────────────────────────
+# ───────────────────────── /profile help（help） ─────────────────────────
 # help.profiles：每行格式為「標籤|內容」，依權限過濾後分頁顯示（標籤與 | 不會顯示）：
 #   *       所有人都顯示
 #   self    需要 tokaProfiles.title.self 權限
@@ -28,33 +28,33 @@ cmd:
 #   plan    需要 tokaProfiles.admin 權限
 # 第一頁是一般玩家最常用的，主題各自用一行說明開頭。${0}＝稱號長度上限（目前 255）
 help:
-  footer: "§7第 §a${0}§7/§a${1}§7 頁，用 §e/profiles help <頁碼>§7 換頁"
+  footer: "§7第 §a${0}§7/§a${1}§7 頁，用 §e/profile help <頁碼>§7 換頁"
   profiles:
     - "*|§6=== §f§ltokaProfiles 說明§r §6=== §7（<必填>、[選填]）"
-    - "*|§e/profiles §7- §b開啟城市通（個人總覽、傳送、錢包、領地），限遊戲內玩家"
-    - "*|§e/profiles help [頁] §7- §b顯示此說明"
+    - "*|§e/profile §7- §b開啟城市通（個人總覽、傳送、錢包、領地），限遊戲內玩家"
+    - "*|§e/profile help [頁] §7- §b顯示此說明"
     - "self|§b自己的稱號（需要 tokaProfiles.title.self）："
-    - "self|§e/profiles mytitle §7- §b查看自己的稱號"
-    - "self|§e/profiles mytitle <稱號> §7- §b設定自己的稱號（有長度限制與等待時間；色碼需要 tokaProfiles.title.color，用 & 代替 §）"
-    - "self|§e/profiles mytitle clear §7- §b清除自己的稱號"
+    - "self|§e/profile mytitle §7- §b查看自己的稱號"
+    - "self|§e/profile mytitle <稱號> §7- §b設定自己的稱號（有長度限制與等待時間；色碼需要 tokaProfiles.title.color，用 & 代替 §）"
+    - "self|§e/profile mytitle clear §7- §b清除自己的稱號"
     - "title|§b玩家稱號（管理員，需要 tokaProfiles.title.admin）："
-    - "title|§e/profiles title <玩家名稱或 UUID> §7- §b查看該玩家目前的稱號"
-    - "title|§e/profiles title <玩家名稱或 UUID> <稱號> §7- §b設定稱號（可含空白與 § 色碼，最長 ${0} 個字元，不可含控制字元）"
-    - "title|§e/profiles title <玩家名稱或 UUID> clear §7- §b清除稱號"
-    - "title|§7/profiles titles 與 /profiles title 相同；名稱對應多位玩家時用 UUID"
+    - "title|§e/profile title <玩家名稱或 UUID> §7- §b查看該玩家目前的稱號"
+    - "title|§e/profile title <玩家名稱或 UUID> <稱號> §7- §b設定稱號（可含空白與 § 色碼，最長 ${0} 個字元，不可含控制字元）"
+    - "title|§e/profile title <玩家名稱或 UUID> clear §7- §b清除稱號"
+    - "title|§7/profile titles 與 /profile title 相同；名稱對應多位玩家時用 UUID"
     - "note|§b備註與總覽（管理員，需要 tokaProfiles.note）："
-    - "note|§e/profiles <玩家名稱或 UUID> §7- §b開啟該玩家的個人總覽，含備註與舊名稱"
-    - "note|§e/profiles admin §7- §b開啟管理視窗：備註、舊名稱、玩家總覽"
-    - "note|§e/profiles note <玩家名稱或 UUID> §7- §b查看備註"
-    - "note|§e/profiles note <玩家名稱或 UUID> <文字> §7- §b以文字取代整份備註（最長 1000 字）"
-    - "note|§e/profiles note <玩家名稱或 UUID> clear §7- §b清除備註"
+    - "note|§e/profile <玩家名稱或 UUID> §7- §b開啟該玩家的個人總覽，含備註與舊名稱"
+    - "note|§e/profile admin §7- §b開啟管理視窗：備註、舊名稱、玩家總覽"
+    - "note|§e/profile note <玩家名稱或 UUID> §7- §b查看備註"
+    - "note|§e/profile note <玩家名稱或 UUID> <文字> §7- §b以文字取代整份備註（最長 1000 字）"
+    - "note|§e/profile note <玩家名稱或 UUID> clear §7- §b清除備註"
     - "legacy|§b舊名稱（管理員，需要 tokaProfiles.legacy）："
-    - "legacy|§e/profiles legacy [list] §7- §b列出舊名稱的筆數與等待確認的名稱"
-    - "legacy|§e/profiles legacy confirm <舊名稱> <玩家名稱或 UUID> §7- §b確認舊名稱歸屬於該玩家"
+    - "legacy|§e/profile legacy [list] §7- §b列出舊名稱的筆數與等待確認的名稱"
+    - "legacy|§e/profile legacy confirm <舊名稱> <玩家名稱或 UUID> §7- §b確認舊名稱歸屬於該玩家"
     - "plan|§b Plan 展示（管理員，需要 tokaProfiles.admin）："
-    - "plan|§e/profiles plan status §7- §b查看 Plan 展示設定"
-    - "plan|§e/profiles plan mode <auto|enable|disable> §7- §b設定 Plan 展示模式"
-    - "plan|§e/profiles plan fields <all|none|欄位...> §7- §b設定要展示的欄位（exists、title、count）"
+    - "plan|§e/profile plan status §7- §b查看 Plan 展示設定"
+    - "plan|§e/profile plan mode <auto|enable|disable> §7- §b設定 Plan 展示模式"
+    - "plan|§e/profile plan fields <all|none|欄位...> §7- §b設定要展示的欄位（exists、title、count）"
     - "title|§b遷移與盤點工具（管理員）：命令列 java -cp tokaProfiles-<版本>.jar 執行，需先停服"
     - "title|§edev.toka.profiles.migration.StagedProfileMigration stage <來源.json> <sqlite|json|yaml> <新stage目錄> [批次筆數 間隔毫秒 [Plan證據.json]] §7- §b背景分批搬遷到獨立資料集，不啟用正式資料"
     - "title|§edev.toka.profiles.migration.StagedProfileMigration verify <stage目錄> <目前來源.json> <sqlite|json|yaml> §7- §b重啟前驗證 stage 與目前來源一致，不執行切換"
@@ -373,7 +373,7 @@ citypass:
     linked: "已連結資料"
     ordinary: "一般玩家"
 note:
-  usage: "§7用法：/profiles note <玩家或 UUID> [文字|clear]（不加文字是查看）"
+  usage: "§7用法：/profile note <玩家或 UUID> [文字|clear]（不加文字是查看）"
   show: "§7[玩家資料]§r §b${0} 的備註：§f${1}"
   none: "§7[玩家資料]§r §b${0} 沒有備註"
   saved: "§7[玩家資料]§r §a已儲存 ${0} 的備註"
@@ -381,7 +381,7 @@ note:
   tooLong: "§7[玩家資料]§r §c備註最長 1000 字"
 legacy:
   summary: "§b舊名稱共 §a${0} §b筆，尚未取回 §a${1} §b筆，等管理員確認 §a${2} §b筆"
-  waiting: "§e${0} §7- 有這些帳號想取回：${1}（/profiles legacy confirm ${0} <玩家或 UUID>）"
+  waiting: "§e${0} §7- 有這些帳號想取回：${1}（/profile legacy confirm ${0} <玩家或 UUID>）"
 
 # ───────────────────────── 狀態字（status） ─────────────────────────
 status:

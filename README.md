@@ -1,10 +1,10 @@
 # tokaProfiles
 
-玩家資料服務：以 UUID 為準保存每位玩家的名稱、歷史名稱、偏好與稱號，玩家可從 `/profiles` 開啟「城市通」查看自己的資料。
+玩家資料服務：以 UUID 為準保存每位玩家的名稱、歷史名稱、偏好與稱號，玩家可從 `/profile` 開啟「城市通」查看自己的資料。
 
 ## 主要功能
 
-- **城市通**：玩家輸入 `/profiles`，看到自己的名稱與識別碼；尚未有資料時會提示「尚未完成玩家資料搬遷」。
+- **城市通**：玩家輸入 `/profile`，看到自己的名稱與識別碼；尚未有資料時會提示「尚未完成玩家資料搬遷」。
 - **稱號**：管理員可設定玩家稱號，支援空白與色碼，最長 255 字元。稱號只用來顯示，不代表任何權限。
 - **同名處理**：同名但 UUID 不同的玩家視為不同人；用名稱查詢時若對到多位，不會任選一位，請改用 UUID。
 - **舊資料搬遷**：把舊系統匯出的玩家資料在背景分批搬進來，過程不影響目前的有效資料。
@@ -13,18 +13,18 @@
 
 | 指令 | 說明 |
 | --- | --- |
-| `/profiles`、`/profile` | 開啟城市通查看自己的資料 |
-| `/profiles help` | 顯示說明 |
+| `/profile`、`/profile` | 開啟城市通查看自己的資料 |
+| `/profile help` | 顯示說明 |
 
 ## 管理指令
 
 | 指令 | 用法 | 說明 | 權限 |
 | --- | --- | --- | --- |
-| `/profiles title` | `/profiles title <玩家名稱或 UUID>` | 查看該玩家的稱號 | `tokaProfiles.title.admin` |
-| `/profiles title` | `/profiles title <玩家名稱或 UUID> <稱號>` | 設定稱號 | `tokaProfiles.title.admin` |
-| `/profiles title` | `/profiles title <玩家名稱或 UUID> clear` | 清除稱號 | `tokaProfiles.title.admin` |
+| `/profile title` | `/profile title <玩家名稱或 UUID>` | 查看該玩家的稱號 | `tokaProfiles.title.admin` |
+| `/profile title` | `/profile title <玩家名稱或 UUID> <稱號>` | 設定稱號 | `tokaProfiles.title.admin` |
+| `/profile title` | `/profile title <玩家名稱或 UUID> clear` | 清除稱號 | `tokaProfiles.title.admin` |
 
-`/profiles titles` 與 `/profiles title` 相同。`tokaProfiles.self` 預設所有人，可開啟城市通；`tokaProfiles.title.admin` 預設 OP。
+`/profile titles` 與 `/profile title` 相同。`tokaProfiles.self` 預設所有人，可開啟城市通；`tokaProfiles.title.admin` 預設 OP。
 
 搬遷舊資料建議採用背景分批：先停服，把舊資料匯出的 JSON 放進插件資料夾，在 `config.yml` 設定 `staged.*` 後啟動，資料會搬進獨立資料集；驗證完成後，再同時將 `staged.activate-next-restart` 與 `staged.source-refreshed-after-stop` 設為 `true`，下次重啟即切換，並自動把這些開關改回 `false`。驗證失敗時會保留原本的有效資料。
 
@@ -79,6 +79,6 @@
 
 預設 `plan.mode: auto`、`plan.fields: all`。`auto` 偵測到可用 Plan 就啟用；`enable` 未就緒時提示；`disable` 一定不發布。all 僅包含本插件核准的摘要欄位，沒有憑證、Discord ID 或私人座標。
 
-管理員可用 `/profiles plan status`、`/profiles plan mode <auto|enable|disable>`、`/profiles plan fields <all|none|欄位...>`；變更保存設定且即時套用，保留其他設定及註解。舊 `plan.enabled`／逐項布林仍相容，明確設定的新 mode／fields 優先。
+管理員可用 `/profile plan status`、`/profile plan mode <auto|enable|disable>`、`/profile plan fields <all|none|欄位...>`；變更保存設定且即時套用，保留其他設定及註解。舊 `plan.enabled`／逐項布林仍相容，明確設定的新 mode／fields 優先。
 
 API（主執行緒）：`planStatusJson()`、`configurePlan(String mode, String[] fields)`；null 表示該項沿用。

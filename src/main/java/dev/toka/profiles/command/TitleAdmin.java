@@ -11,7 +11,7 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * The title command for operators: {@code /profiles title <player or UUID> [title ... | clear]}.
+ * The title command for operators: {@code /profile title <player or UUID> [title ... | clear]}.
  * <p>
  * It only reads and writes the title of a profile through {@link ProfileRepository}. Buying a title and the
  * payment for it stay out of this plugin until a transaction across the two stores is verified.

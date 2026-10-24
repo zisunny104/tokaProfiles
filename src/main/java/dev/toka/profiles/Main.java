@@ -27,7 +27,7 @@ public final class Main extends PluginBase implements cn.nukkit.event.Listener {
  private dev.toka.profiles.plan.PlanControl planControl;
  @Override public void onEnable(){saveDefaultConfig();
   var who=CommandParameter.newType("玩家或UUID",CommandParamType.TARGET);var text=CommandParameter.newType("文字",CommandParamType.RAWTEXT);
-  suggest("profiles",
+  suggest("profile",
   new CommandParameter[]{CommandParameter.newEnum("動作",new String[]{"help"}),CommandParameter.newType("頁",true,CommandParamType.INT)},
   new CommandParameter[]{CommandParameter.newEnum("動作",new String[]{"mytitle"})},
   new CommandParameter[]{CommandParameter.newEnum("動作",new String[]{"mytitle"}),CommandParameter.newEnum("清除",new String[]{"clear"})},
@@ -122,7 +122,7 @@ public final class Main extends PluginBase implements cn.nukkit.event.Listener {
   if(profiles==null)return;
   for(var p:profiles.snapshot().values()){if(Thread.currentThread().isInterrupted())return;var note=p.preferences().get("note");if(note==null)continue;var now=Notes.modernized(note);if(!now.equals(note))try{profiles.put(p.withPreference("note",now)).get();}catch(Exception skip){/* tried again at the next start */}}
  }
- /** /profiles note <player or UUID> [text|clear]: a free text about a player, for administrators. */
+ /** /profile note <player or UUID> [text|clear]: a free text about a player, for administrators. */
  private void noteCommand(CommandSender sender,String[] args){
   if(!sender.hasPermission("tokaProfiles.note")){sender.sendMessage(messages.text("err.noNotePermission"));return;}
   ProfileRepository repository;try{repository=profiles();}catch(IllegalStateException e){sender.sendMessage(messages.text("err.profilesNotReady"));return;}
@@ -185,7 +185,7 @@ public final class Main extends PluginBase implements cn.nukkit.event.Listener {
   getConfig().set("migration.stage","imported");getConfig().set("migration.confirm",false);
   try{ConfigEdit.apply(getDataFolder().toPath().resolve("config.yml"),java.util.Map.of("migration.stage","imported","migration.confirm","false"));}catch(java.io.IOException | RuntimeException saveError){throw new IllegalStateException(messages.text("err.import.saveFailed"),saveError);}
  }
- /** Lines of help.profiles look like "tag|text"; the tag names the permission a line needs. Chat help is paged: /profiles help [page]. */
+ /** Lines of help.profiles look like "tag|text"; the tag names the permission a line needs. Chat help is paged: /profile help [page]. */
  private void sendHelp(CommandSender sender,String page){
   java.util.function.Predicate<String> allowed=tag->switch(tag){
    case "*"->true;

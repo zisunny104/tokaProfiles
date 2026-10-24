@@ -10,7 +10,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * A player changing their own title: {@code /profiles mytitle [title | clear]}. Who may do it is a permission, so identity
+ * A player changing their own title: {@code /profile mytitle [title | clear]}. Who may do it is a permission, so identity
  * groups can be given the right later; the rest is limited here: length, no hidden characters, colours only with their own
  * permission, a list of blocked words, and a wait between changes.
  */

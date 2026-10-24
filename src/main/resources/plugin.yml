@@ -1,29 +1,29 @@
 name: tokaProfiles
 main: dev.toka.profiles.Main
-version: "0.5.17"
+version: "0.5.18"
 api: ["1.0.0"]
 author: zisunny104
 load: STARTUP
 softdepend: [Plan]
 description: Nukkit 玩家身分、偏好與稱號服務，並提供背景分批資料搬遷
 commands:
-  profiles:
-    aliases: [profile]
+  profile:
+    aliases: [profiles]
     description: "玩家資料與城市通入口；管理員另有 title、note、legacy、admin、plan"
-    usage: "/profiles [help [頁] | mytitle [稱號|clear] | title <玩家> [稱號|clear] | note <玩家> [文字|clear] | legacy [list|confirm <舊名稱> <玩家>] | admin | plan <status|mode|fields> | <玩家>]"
+    usage: "/profile [help [頁] | mytitle [稱號|clear] | title <玩家> [稱號|clear] | note <玩家> [文字|clear] | legacy [list|confirm <舊名稱> <玩家>] | admin | plan <status|mode|fields> | <玩家>]"
     permission: tokaProfiles.self
 permissions:
   tokaProfiles.self:
-    description: "開啟城市通並查看個人總覽（/profiles、/profiles help）"
+    description: "開啟城市通並查看個人總覽（/profile、/profile help）"
     default: true
   tokaProfiles.title.self:
-    description: "修改自己的稱號（/profiles mytitle）；預設關閉，由身分組授予"
+    description: "修改自己的稱號（/profile mytitle）；預設關閉，由身分組授予"
     default: false
   tokaProfiles.title.color:
     description: "自己的稱號可以使用色碼"
     default: false
   tokaProfiles.title.admin:
-    description: "查看與修改玩家稱號（/profiles title）"
+    description: "查看與修改玩家稱號（/profile title）"
     default: op
   toka.identity.admin:
     description: "身分：管理員（由權限群組授予，名牌顯示管）"
@@ -35,11 +35,11 @@ permissions:
     description: "身分：已連結資料（由 tokaDiscordLink 加入群組，名牌不顯示）"
     default: false
   tokaProfiles.note:
-    description: "查看與寫玩家的備註、開啟他人總覽與管理視窗（/profiles note、/profiles admin）"
+    description: "查看與寫玩家的備註、開啟他人總覽與管理視窗（/profile note、/profile admin）"
     default: op
   tokaProfiles.legacy:
-    description: "查看與確認舊名稱的歸屬（/profiles legacy）"
+    description: "查看與確認舊名稱的歸屬（/profile legacy）"
     default: op
   tokaProfiles.admin:
-    description: "管理 Plan 展示設定（/profiles plan）"
+    description: "管理 Plan 展示設定（/profile plan）"
     default: op

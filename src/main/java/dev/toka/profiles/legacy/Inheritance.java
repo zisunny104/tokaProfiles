@@ -46,7 +46,7 @@ public final class Inheritance {
             switch (LegacyBook.judge(record.get(), name, uuid)) {
                 case CLAIM: return adopt(record.get(), uuid);
                 case CONFIRM_NEEDED:
-                    if (book.dispute(record.get().name(), uuid)) warn.accept("舊名稱 " + record.get().name() + " 被 " + uuid + " 使用，但名稱曾對應其他帳號，需管理員確認：/profiles legacy confirm " + record.get().name() + " " + uuid);
+                    if (book.dispute(record.get().name(), uuid)) warn.accept("舊名稱 " + record.get().name() + " 被 " + uuid + " 使用，但名稱曾對應其他帳號，需管理員確認：/profile legacy confirm " + record.get().name() + " " + uuid);
                     return CompletableFuture.completedFuture(null);
                 default: return CompletableFuture.completedFuture(null);
             }
