@@ -40,7 +40,7 @@ final class Overview {
 
     private String t(String key, Object... args) { return messages().text(key, args); }
 
-    private String section(String key) { return "§b■ " + t("ui.overview.sec." + key); }
+    private String section(String key) { return "■ " + t("ui.overview.sec." + key); }
 
     // ---- the overview --------------------------------------------------------------------------------------------
 
