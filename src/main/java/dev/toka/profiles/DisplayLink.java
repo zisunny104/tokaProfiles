@@ -71,7 +71,10 @@ final class DisplayLink {
                 boolean settling = System.currentTimeMillis() - since < SETTLE_MILLIS;
                 if (online != null && !(settling && identityIds(online::hasPermission).isEmpty())) return identity(online::hasPermission, tags);
                 try {
-                    var kept = java.util.Set.of(profiles.profiles().find(id).map(p -> p.preferences().getOrDefault("identity", "")).orElse("").split(","));
+                    // someone offline (a message from Discord): what the profile remembers, else a look at LuckPerms; unknown shows no tag at all
+                    String known = profiles.offline().lookup(id);
+                    if (known == null) return "";
+                    var kept = java.util.Set.of(known.split(","));
                     return identity(node -> kept.contains(node.substring("toka.identity.".length())), tags);
                 } catch (RuntimeException unavailable) { return ""; }
             };

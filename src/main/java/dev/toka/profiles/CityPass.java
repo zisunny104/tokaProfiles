@@ -76,6 +76,26 @@ final class CityPass implements Listener {
 
     @EventHandler(priority = EventPriority.HIGH) public void onJoin(PlayerJoinEvent event) { ensureItem(event.getPlayer()); }
 
+    /** The game's clear command empties the inventory, pass included: give it back right after, to everyone it could have reached. */
+    @EventHandler(priority = EventPriority.MONITOR) public void onClearByPlayer(cn.nukkit.event.player.PlayerCommandPreprocessEvent event) {
+        if (!event.isCancelled() && clears(event.getMessage())) giveBackSoon();
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR) public void onClearByConsole(cn.nukkit.event.server.ServerCommandEvent event) {
+        if (!event.isCancelled() && clears(event.getCommand())) giveBackSoon();
+    }
+
+    private static boolean clears(String command) {
+        String text = command == null ? "" : command.strip().toLowerCase(java.util.Locale.ROOT);
+        if (text.startsWith("/")) text = text.substring(1);
+        if (text.startsWith("minecraft:")) text = text.substring("minecraft:".length());
+        return text.equals("clear") || text.startsWith("clear ");
+    }
+
+    private void giveBackSoon() {
+        plugin.getServer().getScheduler().scheduleDelayedTask(plugin, () -> plugin.getServer().getOnlinePlayers().values().forEach(this::ensureItem), 2);
+    }
+
     @EventHandler public void onQuit(PlayerQuitEvent event) { open.remove(event.getPlayer().getUniqueId()); lastUse.remove(event.getPlayer().getUniqueId()); }
 
     @EventHandler public void onInteract(PlayerInteractEvent event) {
