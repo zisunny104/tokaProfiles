@@ -68,11 +68,11 @@
 - **城市通顯示「尚未完成玩家資料搬遷」？** 該玩家的資料還沒有搬進來，請依上述流程搬遷。
 - **用名稱設定稱號失敗？** 可能有多位玩家同名，請改用 UUID。
 
-### Plan 選用整合（0.2.3）
+### Plan 選用整合
 
 預設自動接入 Plan，提供 `exists`（玩家資料是否存在）、`title`（稱號）、`count`（全服正式資料筆數）；可用 `plan.fields` 選擇欄位或全部關閉。只讀目前啟用的 ProfileRepository，不讀 staging、搬遷名單、legacy ID、別名或玩家偏好，不作身分判定。Plan Provider 讀 volatile immutable index，不等待儲存、不讀世界或玩家物件。資料庫不就緒時回傳 NotReady，避免虛構空資料。
 
-使用官方 Plan API5.7-R0.2 provided，核對 Plan5.8 build3638 支援 Builder API；未安裝/停用/能力不足時略過，Plan 啟用停用及插件卸載會註冊/清除整合。Plan 模式與欄位可用下列管理指令即時套用。語系欄位在 `plan`，走 tokaI18n。Plan 網頁閱覽權限及已保存資料由 Plan 管理；停用欄位或更改標籤不會自動刪除 Plan 的歷史資料。
+使用官方 Plan API（provided）；未安裝/停用/能力不足時略過，Plan 啟用停用及插件卸載會註冊/清除整合。Plan 模式與欄位可用下列管理指令即時套用。語系欄位在 `plan`，走 tokaI18n。Plan 網頁閱覽權限及已保存資料由 Plan 管理；停用欄位或更改標籤不會自動刪除 Plan 的歷史資料。
 
 
 ### Plan 模式與管理指令
