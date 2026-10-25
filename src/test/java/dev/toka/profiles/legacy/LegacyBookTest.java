@@ -1,7 +1,6 @@
 package dev.toka.profiles.legacy;
 
 import static org.junit.Assert.*;
-import com.google.gson.JsonParser;
 import dev.toka.storage.*;
 import java.nio.file.Path;
 import java.util.*;
@@ -14,8 +13,13 @@ public class LegacyBookTest {
     static final UUID A = UUID.randomUUID(), B = UUID.randomUUID();
 
     private LegacyBook book() throws Exception {
+        try (var seed = DocumentStore.open(new StoreConfig(Backend.JSON, dir(), 1))) {
+            for (var r : List.of(
+                    new LegacyRecord("Alone", "1", null, "", "", "", Set.of(), Set.of(), null, ""),
+                    new LegacyRecord("Shared", "2", null, "", "", "", Set.of(B), Set.of(), null, ""),
+                    new LegacyRecord("Known", "3", A, "", "", "", Set.of(A), Set.of(), null, ""))) seed.save(LegacyBook.storeKey(r.name()), r.toJson());
+        }
         var book = LegacyBook.open(new StoreConfig(Backend.JSON, dir(), 1));
-        book.importRows(JsonParser.parseString("[{\"name\":\"Alone\",\"id\":\"1\"},{\"name\":\"Shared\",\"id\":\"2\",\"evidence\":[\"" + B + "\"]},{\"name\":\"Known\",\"id\":\"3\",\"UUID\":\"" + A + "\"}]").getAsJsonArray());
         return book;
     }
 

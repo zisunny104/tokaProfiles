@@ -225,8 +225,6 @@ log:
   # 啟動完成；${0}＝玩家資料筆數
   ready: "§b玩家資料就緒：§a${0} §b筆"
   storageInitFailed: "§c儲存初始化失敗"
-  # ${0}＝例外類別
-  legacyImportFailed: "§c舊玩家資料匯入失敗：§a${0}"
   # ${0}＝玩家 ${1}＝例外類別
   loginFailed: "§e玩家 §a${0} §e的檔案處理失敗：§a${1}"
   writerCloseFailed: "§e玩家資料寫入器未能正常關閉"

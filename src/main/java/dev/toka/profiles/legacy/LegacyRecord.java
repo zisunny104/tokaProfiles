@@ -23,8 +23,6 @@ public record LegacyRecord(String name, String legacyId, UUID uuid, String title
         return new LegacyRecord(name, legacyId, uuid, title, village, discordId, evidence, all, claimedBy, note);
     }
 
-    public LegacyRecord withNote(String text) { return new LegacyRecord(name, legacyId, uuid, title, village, discordId, evidence, disputed, claimedBy, text); }
-
     public JsonObject toJson() {
         var out = new JsonObject();
         out.addProperty("name", name);

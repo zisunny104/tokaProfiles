@@ -56,19 +56,6 @@ public final class Main extends PluginBase implements cn.nukkit.event.Listener {
   overview=new Overview(this,forms,new SoftLinks(getServer()));adminWindows=new AdminWindows(this,forms,overview);
   cityPass=new CityPass(this,messages,forms,overview,adminWindows);getServer().getPluginManager().registerEvents(cityPass,this);
   for(Player online:getServer().getOnlinePlayers().values())cityPass.ensureItem(online);
-  var notes=getDataFolder().toPath().resolve("legacy-notes.json");
-  var source=getDataFolder().toPath().resolve("legacy-players.json");
-  if(java.nio.file.Files.isRegularFile(source)){
-   var worker=new Thread(()->{try{if(Thread.currentThread().isInterrupted())throw new InterruptedException();getLogger().info(inheritance.importFile(source));java.nio.file.Files.move(source,source.resolveSibling("legacy-players.json.imported"),java.nio.file.StandardCopyOption.REPLACE_EXISTING);}catch(InterruptedException stopped){Thread.currentThread().interrupt();}catch(Exception error){getLogger().warning(messages.text("log.legacyImportFailed",error.getClass().getSimpleName()));}},"tokaProfiles-legacy-import");
-   worker.setDaemon(true);workers.add(worker);worker.start();
-  }
-  if(java.nio.file.Files.isRegularFile(notes)){
-   var worker=new Thread(()->{try{
-     while(java.nio.file.Files.isRegularFile(source))Thread.sleep(500); // the players first: the notes go into their profiles
-     getLogger().info(inheritance.importNotes(notes));java.nio.file.Files.move(notes,notes.resolveSibling("legacy-notes.json.imported"),java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-    }catch(InterruptedException stopped){Thread.currentThread().interrupt();}catch(Exception error){getLogger().warning(messages.text("log.legacyImportFailed",error.getClass().getSimpleName()));}},"tokaProfiles-legacy-notes");
-   worker.setDaemon(true);workers.add(worker);worker.start();
-  }
  }
  // TODO: Reserved for other plugins that act on notes, called by reflection.
  /** The entries of the given type in a player's note, each as its fields (with "type" and "text" too). For plugins that act on notes, by reflection. */

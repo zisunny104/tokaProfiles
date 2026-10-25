@@ -38,13 +38,6 @@ public final class LegacyBook implements AutoCloseable {
         catch (java.security.NoSuchAlgorithmException impossible) { throw new IllegalStateException(impossible); }
     }
 
-    /** Control characters, a leading "@" and quote marks are dropped: the old tables hold names typed by hand. */
-    public static String clean(String name) {
-        String text = name.replaceAll("\\p{Cntrl}", "").strip();
-        if (text.startsWith("@")) text = text.substring(1);
-        return text.replaceAll("^['\"]+|['\"]+$", "").strip();
-    }
-
     /** The exact name and nobody else ever seen with it: taken over at once. Another account seen with the name needs an administrator. */
     public static Verdict judge(LegacyRecord record, String loginName, UUID login) {
         if (record.claimedBy() != null) return Verdict.NONE;
@@ -53,38 +46,6 @@ public final class LegacyBook implements AutoCloseable {
         Set<UUID> others = new HashSet<>(record.evidence());
         others.remove(login);
         return others.isEmpty() ? Verdict.CLAIM : Verdict.CONFIRM_NEEDED;
-    }
-
-    /** Adds the names not known yet and returns them; rows are the old player table ({@code name, id, UUID, title, village, discordId, evidence}). */
-    public synchronized List<LegacyRecord> importRows(JsonArray rows) throws IOException {
-        List<LegacyRecord> added = new ArrayList<>();
-        Map<String, JsonObject> documents = new LinkedHashMap<>();
-        for (JsonElement element : rows) {
-            JsonObject row = element.getAsJsonObject();
-            String name = clean(LegacyRecord.text(row, "name"));
-            if (name.isEmpty() || records.containsKey(key(name))) continue;
-            UUID uuid = null;
-            try { String raw = LegacyRecord.text(row, "UUID"); if (!raw.isBlank()) uuid = UUID.fromString(raw.strip()); } catch (IllegalArgumentException none) { /* never had one */ }
-            Set<UUID> evidence = new LinkedHashSet<>();
-            if (row.has("evidence")) for (JsonElement e : row.getAsJsonArray("evidence")) { try { evidence.add(UUID.fromString(e.getAsString())); } catch (IllegalArgumentException skip) { } }
-            if (uuid != null) evidence.add(uuid);
-            LegacyRecord record = new LegacyRecord(name, LegacyRecord.text(row, "id"), uuid, LegacyRecord.text(row, "title"), LegacyRecord.text(row, "village"),
-                    LegacyRecord.text(row, "discordId"), evidence, Set.of(), null, LegacyRecord.text(row, "note"));
-            records.put(key(name), record);
-            documents.put(storeKey(name), record.toJson());
-            added.add(record);
-        }
-        if (!documents.isEmpty()) store.saveAll(documents);
-        return added;
-    }
-
-    /** Keeps a note with a name whose player has not come back yet; it goes into the profile when they do. */
-    public synchronized void setNote(String name, String note) throws IOException {
-        LegacyRecord record = records.get(key(name));
-        if (record == null) return;
-        LegacyRecord next = record.withNote(note);
-        store.save(storeKey(name), next.toJson());
-        records.put(key(name), next);
     }
 
     public synchronized Optional<LegacyRecord> find(String name) { return Optional.ofNullable(records.get(key(name))); }
@@ -129,15 +90,6 @@ public final class LegacyBook implements AutoCloseable {
             try { listener.accept(next.name(), by); } catch (RuntimeException | LinkageError ignored) { /* a receiver catches up from resolved() */ }
         }
         return true;
-    }
-
-    /** For the import: the account was already known to the old data, so nobody needs telling; receivers read {@link #resolved()} when they start. */
-    public synchronized void claimQuietly(String name, UUID by) throws IOException {
-        LegacyRecord record = records.get(key(name));
-        if (record == null || record.claimedBy() != null) return;
-        LegacyRecord next = record.claimed(by);
-        store.save(storeKey(name), next.toJson());
-        records.put(key(name), next);
     }
 
     public void listen(BiConsumer<String, UUID> listener) { listeners.add(listener); }

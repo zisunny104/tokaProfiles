@@ -1,11 +1,8 @@
 package dev.toka.profiles.legacy;
 
-import com.google.gson.*;
 import dev.toka.profiles.model.Profile;
 import dev.toka.profiles.storage.ProfileRepository;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.Consumer;
@@ -77,45 +74,5 @@ public final class Inheritance {
         if (record.get().claimedBy() != null) return CompletableFuture.completedFuture("舊名稱 " + record.get().name() + " 已由 " + record.get().claimedBy() + " 取回");
         if (profiles.find(uuid).isEmpty()) return CompletableFuture.completedFuture("這個帳號還沒有玩家檔案（需要先登入一次）：" + uuid);
         return adopt(record.get(), uuid).thenApply(done -> "舊名稱 " + record.get().name() + " 已指定給 " + uuid);
-    }
-
-    /**
-     * Notes about players from the old data ({"name": "text"}): put into the profile when the account is known, otherwise kept with the
-     * old name until its player comes back. Nothing already written is replaced.
-     */
-    public String importNotes(Path source) throws IOException, InterruptedException, ExecutionException {
-        JsonObject notes = JsonParser.parseString(Files.readString(source, StandardCharsets.UTF_8)).getAsJsonObject();
-        int put = 0, kept = 0;
-        for (var entry : notes.entrySet()) {
-            String text = entry.getValue().getAsString();
-            var record = book.find(dev.toka.profiles.legacy.LegacyBook.clean(entry.getKey()));
-            if (record.isEmpty() || text.isBlank()) continue;
-            var profile = record.get().uuid() == null ? Optional.<Profile>empty() : profiles.find(record.get().uuid());
-            if (profile.isPresent()) {
-                if (profile.get().preferences().getOrDefault(NOTE, "").isBlank()) { profiles.put(profile.get().withPreference(NOTE, text)).get(); put++; }
-            } else if (record.get().note().isBlank()) { book.setNote(dev.toka.profiles.legacy.LegacyBook.clean(entry.getKey()), text); kept++; }
-        }
-        return "舊玩家備註：寫進玩家檔案 " + put + " 筆、等本人登入 " + kept + " 筆";
-    }
-
-    /**
-     * Reads the old player table that was left in the data folder and adds what is not known yet. Entries that already had an account
-     * get their profile at once; the others wait for their player. Runs on a thread of its own.
-     */
-    public String importFile(Path source) throws IOException, InterruptedException, ExecutionException {
-        JsonElement parsed = JsonParser.parseString(Files.readString(source, StandardCharsets.UTF_8));
-        JsonArray rows = parsed.isJsonArray() ? parsed.getAsJsonArray() : parsed.getAsJsonObject().getAsJsonArray("rows");
-        List<LegacyRecord> added = book.importRows(rows);
-        int profilesMade = 0, waiting = 0;
-        for (LegacyRecord record : added) {
-            if (record.uuid() == null) { waiting++; continue; }
-            if (profiles.find(record.uuid()).isEmpty()) {
-                Profile made = new Profile(record.uuid(), record.name(), Set.of(), record.note().isBlank() ? Map.of() : Map.of(NOTE, record.note()), null, record.title().length() <= 255 ? record.title() : "");
-                try { profiles.put(made.withLegacyId(record.legacyId().isBlank() ? null : record.legacyId())).get(); profilesMade++; }
-                catch (ExecutionException collision) { profiles.put(made).get(); profilesMade++; }
-            }
-            book.claimQuietly(record.name(), record.uuid());
-        }
-        return "舊玩家資料：新增 " + added.size() + " 筆（建立玩家檔案 " + profilesMade + "、等待本人登入 " + waiting + "）";
     }
 }
