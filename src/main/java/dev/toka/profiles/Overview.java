@@ -108,13 +108,12 @@ final class Overview {
             }
         }
         List<Forms.Item> items = new ArrayList<>();
-        // the check-in is what most players come for, so it is the first button
-        if (self) items.add(Forms.Item.of(t("ui.overview.btn.checkin"), ICON_CHECKIN, p -> plugin.getServer().dispatchCommand(p, "reward status")));
         if (self && viewer.hasPermission("tokaProfiles.title.self")) items.add(Forms.Item.of(t("ui.overview.btn.title"), ICON_TITLE, p -> plugin.cityPass().editTitle(p)));
         items.add(Forms.Item.of(t("ui.overview.btn.stats"), ICON_STATS, p -> stats(p, profile, 7, back)));
         if (self) {
             items.add(Forms.Item.of(t("ui.overview.btn.wallet"), ICON_WALLET, p -> plugin.getServer().dispatchCommand(p, "balance")));
             items.add(Forms.Item.of(t("ui.overview.btn.land"), ICON_LAND, p -> plugin.getServer().dispatchCommand(p, "land menu")));
+            items.add(Forms.Item.of(t("ui.overview.btn.checkin"), ICON_CHECKIN, p -> plugin.getServer().dispatchCommand(p, "reward status")));
         }
         items.add(Forms.Item.of(t("ui.back"), ICON_BACK, back == null ? p -> { } : back));
         forms.menu(viewer, self ? t("ui.overview.heading") : t("ui.overview.headingOf", profile.name()), String.join("\n", lines), items);
