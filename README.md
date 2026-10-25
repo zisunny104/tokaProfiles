@@ -51,6 +51,27 @@
 | `updateTitle` | UUID、稱號 | 更新稱號（非同步） |
 | `Main` 實例的 `openCityPass` | 玩家 | 對玩家開啟城市通 |
 
+### 舊名稱被帳號取回事件
+
+舊名稱被某個帳號取回（登入自動判定或管理員確認）並已存檔後，會在**主執行緒**觸發 `dev.toka.profiles.event.LegacyResolvedEvent`，每個名稱一次；只涵蓋 tokaProfiles 啟動之後發生的取回，啟動前已取回的請在自己啟動時讀 `Main.legacyResolved()`（舊名稱對 UUID 的 Map，反射呼叫）。
+
+| 欄位 | 說明 |
+| --- | --- |
+| `getOldName()` | 舊名稱 |
+| `getUuid()` | 取回的帳號 UUID |
+
+處理器只能為這一位玩家做事：不可掃描全部領地、區域或帳戶，不可阻塞磁碟或網路，儲存交給自己既有的非同步或批次流程。不依賴 tokaProfiles 編譯的插件可用反射註冊：
+
+```java
+Plugin profiles = getServer().getPluginManager().getPlugin("tokaProfiles");
+Class<?> type = profiles.getClass().getClassLoader().loadClass("dev.toka.profiles.event.LegacyResolvedEvent");
+Method name = type.getMethod("getOldName"), uuid = type.getMethod("getUuid");
+Listener listener = new Listener() {};
+getServer().getPluginManager().registerEvent(type.asSubclass(Event.class), listener, EventPriority.NORMAL,
+        (l, e) -> onLegacy((String) name.invoke(e), (UUID) uuid.invoke(e)), this);
+// tokaProfiles 重新啟用時先 HandlerList.unregisterAll(listener) 再註冊；停用時也要移除
+```
+
 `Profile` 提供 `uuid()`、`profileId()`、`name()`、`aliases()`、`preferences()`、`legacyId()`、`title()`；`profileId()` 與 `uuid()` 相同。
 
 ## 疑難排解

@@ -47,6 +47,7 @@ public final class Main extends PluginBase implements cn.nukkit.event.Listener {
   messages=new Messages(getClass().getClassLoader(),getDataFolder().toPath(),getConfig().getString("language","zh-TW"),line->getLogger().warning(line));Texts.use(messages);try{Backend backend=Backend.valueOf(getConfig().getString("storage.backend","sqlite").toUpperCase(java.util.Locale.ROOT));var active=localPath(getConfig().getString("storage.active-directory","storage"));profiles=ProfileRepository.open(new StoreConfig(backend,active,1),getConfig().getInt("storage.queue-capacity",128));getLogger().info(messages.text("log.ready",profiles.snapshot().size()));workers.add(offline().fillMissing());startLegacy(backend);getServer().getPluginManager().registerEvents(this,this);refreshPlan();}catch(Exception e){getLogger().error(messages.text("log.storageInitFailed"),e);getServer().getPluginManager().disablePlugin(this);}}
  private void startLegacy(Backend backend)throws Exception {
   book=dev.toka.profiles.legacy.LegacyBook.open(new StoreConfig(backend,localPath("legacy"),1));
+  book.listen(this::announceLegacy);
   inheritance=new dev.toka.profiles.legacy.Inheritance(profiles,book,task->getServer().getScheduler().scheduleTask(this,task),line->getLogger().info(line),line->getLogger().warning(line));
   running=this;
   var tidy=new Thread(this::modernizeNotes,"tokaProfiles-notes-tidy");tidy.setDaemon(true);workers.add(tidy);tidy.start();
@@ -89,8 +90,11 @@ public final class Main extends PluginBase implements cn.nukkit.event.Listener {
  public static java.util.Map<String,java.util.UUID> legacyResolved(){var self=running;return self==null||self.book==null?java.util.Map.of():self.book.resolved();}
  /** What the old record said about an account that took over a name: village, discordId, title. Empty when it has none. */
  public static java.util.Map<String,String> legacyDetail(java.util.UUID uuid){var self=running;if(self==null||self.book==null)return java.util.Map.of();return self.book.claimedBy(uuid).map(r->java.util.Map.of("name",r.name(),"village",r.village(),"discordId",r.discordId(),"title",r.title())).orElse(java.util.Map.of());}
- /** Called with (old name, account) each time an old name is taken over. Receivers also read legacyResolved() when they start. */
- public static void onLegacyResolved(java.util.function.BiConsumer<String,java.util.UUID> listener){var self=running;if(self!=null&&self.book!=null)self.book.listen(listener);}
+ /** Fires {@link dev.toka.profiles.event.LegacyResolvedEvent} on the main thread (the takeover is normally made there already). */
+ private void announceLegacy(String name,java.util.UUID uuid){
+  Runnable fire=()->getServer().getPluginManager().callEvent(new dev.toka.profiles.event.LegacyResolvedEvent(name,uuid));
+  if(getServer().isPrimaryThread())fire.run();else getServer().getScheduler().scheduleTask(this,fire);
+ }
  @cn.nukkit.event.EventHandler public void joined(cn.nukkit.event.player.PlayerJoinEvent e){
   if(inheritance==null||profiles==null)return;var player=e.getPlayer();
   inheritance.login(player.getUniqueId(),player.getName()).thenRun(()->{rememberIdentity(player);getServer().getScheduler().scheduleDelayedTask(this,()->welcome.offer(player,profiles),40);}).exceptionally(failure->{getLogger().warning(messages.text("log.loginFailed",player.getName(),failure.getClass().getSimpleName()));return null;});
