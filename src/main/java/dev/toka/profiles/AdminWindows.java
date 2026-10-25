@@ -66,14 +66,15 @@ final class AdminWindows {
             if (other.isOnline() && other.getName().toLowerCase(Locale.ROOT).contains(needle)) options.add(other.getName());
         }
         FormWindowCustom form = new FormWindowCustom(t("ui.admin.pick.title"));
+        form.addElement(new ElementHeader(t("ui.admin.pick.title")));
         form.addElement(new ElementLabel(error == null ? t("ui.admin.pick.hint") : error));
         form.addElement(new ElementInput(t("ui.admin.pick.search"), t("ui.admin.pick.searchHint"), search));
         form.addElement(new ElementDropdown(t("ui.admin.pick.online"), options, options.size() == 2 ? 1 : 0));
         form.addElement(new ElementInput(t("ui.admin.pick.offline"), t("ui.admin.pick.offlineHint"), ""));
         forms.custom(player, form, response -> {
-            String typedSearch = Forms.input(response, 1);
-            String offline = Forms.input(response, 3);
-            int index = response.getDropdownResponse(2) == null ? 0 : response.getDropdownResponse(2).getElementID();
+            String typedSearch = Forms.input(response, 2);
+            String offline = Forms.input(response, 4);
+            int index = response.getDropdownResponse(3) == null ? 0 : response.getDropdownResponse(3).getElementID();
             if (!offline.isEmpty()) {
                 Optional<UUID> found = find(offline);
                 if (found.isPresent()) next.accept(player, found.get());
@@ -142,9 +143,10 @@ final class AdminWindows {
     private void legacySearch(Player player, String query) {
         if (plugin.book() == null) { player.sendMessage(t("err.profilesNotReady")); return; }
         FormWindowCustom form = new FormWindowCustom(t("ui.admin.legacy.title"));
+        form.addElement(new ElementHeader(t("ui.admin.legacy.title")));
         form.addElement(new ElementLabel(t("ui.admin.legacy.summary", plugin.book().size(), plugin.book().unclaimed(), plugin.book().waiting().size())));
         form.addElement(new ElementInput(t("ui.admin.legacy.query"), t("ui.admin.legacy.queryHint"), query));
-        forms.custom(player, form, response -> legacyList(player, Forms.input(response, 1)), this::open);
+        forms.custom(player, form, response -> legacyList(player, Forms.input(response, 2)), this::open);
     }
 
     private void legacyList(Player player, String query) {
