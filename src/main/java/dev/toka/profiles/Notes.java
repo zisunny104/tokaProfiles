@@ -58,10 +58,4 @@ public final class Notes {
     public static String append(String note, String line) {
         return note.isBlank() ? line : note.stripTrailing() + "\n" + line;
     }
-
-    /** The old text a donated amount was kept as, in the entry form; anything else is returned as it is. */
-    public static String modernized(String note) {
-        var legacy = Pattern.compile("贊助金額 (\\d+)（舊資料）").matcher(note.strip());
-        return legacy.matches() ? "donation amount=" + legacy.group(1) + " id=legacy paid=legacy # 贊助金額 " + legacy.group(1) + "（舊資料）" : note;
-    }
 }

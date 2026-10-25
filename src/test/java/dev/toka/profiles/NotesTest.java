@@ -32,11 +32,4 @@ public class NotesTest {
         assertEquals("a\nb", Notes.append("a", "b"));
         assertEquals("b", Notes.append("", "b"));
     }
-
-    @Test public void theOldDonationTextBecomesAnEntryThatIsAlreadyPaid() {
-        var entry = Notes.entries(Notes.modernized("贊助金額 300（舊資料）")).get(0);
-        assertEquals("300", entry.fields().get("amount"));
-        assertEquals("legacy", entry.fields().get("paid"));
-        assertEquals("其他備註", Notes.modernized("其他備註"));
-    }
 }

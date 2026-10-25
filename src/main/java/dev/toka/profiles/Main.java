@@ -50,7 +50,6 @@ public final class Main extends PluginBase implements cn.nukkit.event.Listener {
   book.listen(this::announceLegacy);
   inheritance=new dev.toka.profiles.legacy.Inheritance(profiles,book,task->getServer().getScheduler().scheduleTask(this,task),line->getLogger().info(line),line->getLogger().warning(line));
   running=this;
-  var tidy=new Thread(this::modernizeNotes,"tokaProfiles-notes-tidy");tidy.setDaemon(true);workers.add(tidy);tidy.start();
   welcome=new Welcome(this,messages);getServer().getPluginManager().registerEvents(welcome,this);
   forms=new Forms();getServer().getPluginManager().registerEvents(forms,this);
   overview=new Overview(this,forms,new SoftLinks(getServer()));adminWindows=new AdminWindows(this,forms,overview);
@@ -106,11 +105,6 @@ public final class Main extends PluginBase implements cn.nukkit.event.Listener {
   String note=Notes.append(found.get().preferences().getOrDefault("note",""),line.strip().replace("\n"," "));
   if(note.length()>1000)return java.util.concurrent.CompletableFuture.completedFuture(false);
   return self.profiles.put(found.get().withPreference("note",note)).thenApply(done->true);
- }
- /** Notes written as plain text by an earlier version are rewritten as entries. */
- private void modernizeNotes(){
-  if(profiles==null)return;
-  for(var p:profiles.snapshot().values()){if(Thread.currentThread().isInterrupted())return;var note=p.preferences().get("note");if(note==null)continue;var now=Notes.modernized(note);if(!now.equals(note))try{profiles.put(p.withPreference("note",now)).get();}catch(Exception skip){/* tried again at the next start */}}
  }
  /** /profile note <player or UUID> [text|clear]: a free text about a player, for administrators. */
  private void noteCommand(CommandSender sender,String[] args){
