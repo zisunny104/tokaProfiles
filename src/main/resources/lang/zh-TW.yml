@@ -9,8 +9,6 @@
 #   §b 一般文字　§a 數字／名稱／值（寫成 §a${0}§b）　§e 警告／指令　§c 錯誤與拒絕
 #   §7 用法與補充說明　§6 標題　§r 重設樣式
 #   後台 log 不加方括號標籤；玩家訊息固定使用前綴「§7[玩家資料]§r 」。
-# 命令列工具（StagedProfileMigration、ProfileMigration、PlanResolution）輸出的
-# PROFILE_IMPORT_PASS、STAGE_RESULT 等結果標記是給腳本判讀的穩定 code，不翻譯、不放在這裡。
 
 # ───────────────────────── 指令說明與用法（cmd） ─────────────────────────
 cmd:
@@ -55,14 +53,6 @@ help:
     - "plan|§e/profile plan status §7- §b查看 Plan 展示設定"
     - "plan|§e/profile plan mode <auto|enable|disable> §7- §b設定 Plan 展示模式"
     - "plan|§e/profile plan fields <all|none|欄位...> §7- §b設定要展示的欄位（exists、title、count）"
-    - "title|§b遷移與盤點工具（管理員）：命令列 java -cp tokaProfiles-<版本>.jar 執行，需先停服"
-    - "title|§edev.toka.profiles.migration.StagedProfileMigration stage <來源.json> <sqlite|json|yaml> <新stage目錄> [批次筆數 間隔毫秒 [Plan證據.json]] §7- §b背景分批搬遷到獨立資料集，不啟用正式資料"
-    - "title|§edev.toka.profiles.migration.StagedProfileMigration verify <stage目錄> <目前來源.json> <sqlite|json|yaml> §7- §b重啟前驗證 stage 與目前來源一致，不執行切換"
-    - "title|§edev.toka.profiles.migration.ProfileMigration import <來源.json> <sqlite|json|yaml> <新資料目錄> <備份目錄> §7- §b離線一次性匯入並備份、讀回比對"
-    - "title|§edev.toka.profiles.migration.ProfileMigration export-jdbc <jdbc:mysql:網址> <帳號> <輸出.json> §7- §b唯讀匯出 playerData 快照（密碼用 TOKA_DB_PASSWORD 或互動輸入）"
-    - "title|§edev.toka.profiles.migration.ProfileMigration plan-permissions <來源.json> <輸出檔> §7- §b產生未審核的 LuckPerms 身分群組指令提案，不會執行"
-    - "title|§edev.toka.profiles.migration.PlanResolution <來源.json> <Plan證據.json> <新私人目錄> §7- §b離線身分對照與封存輸出，不寫入正式資料"
-    - "title|§7設定檔 staged.*（背景搬遷）與 migration.*（離線匯入）的說明見 config.yml 內的註解"
 
 # ───────────────────────── 玩家／指令訊息（msg） ─────────────────────────
 msg:
@@ -109,20 +99,10 @@ err:
     # ${0}＝輸入的玩家名稱
     noPlayer: "§7[玩家資料]§r §c找不到玩家「${0}」的資料"
     ambiguous: "§7[玩家資料]§r §c「${0}」對應到多筆玩家資料，需改用 UUID"
-  # 以下為啟動與遷移流程的例外訊息（會寫進後台 log，給管理員判讀），不含前綴
+  # 以下為啟動流程的例外訊息（會寫進後台 log，給管理員判讀），不含前綴
   path:
     outside: "路徑必須位於插件資料目錄內"
     symlink: "不接受符號連結"
-  activate:
-    needRefresh: "切換前必須停服並重新匯出來源，再確認來源已更新"
-    saveFailed: "切換設定保存失敗；未開啟新資料集"
-  stage:
-    notIndependent: "搬遷與有效資料目錄必須獨立"
-  import:
-    notConfirmed: "搬遷尚未確認；不建立空白資料"
-    sourceOutside: "來源必須在插件資料目錄內"
-    hashMismatch: "來源雜湊未確認或不符"
-    saveFailed: "匯入完成但設定保存失敗，需人工核對，不可重複匯入"
 
 # ───────────────────────── 表單與命令列提示（ui） ─────────────────────────
 ui:
@@ -245,10 +225,6 @@ log:
   # 啟動完成；${0}＝玩家資料筆數
   ready: "§b玩家資料就緒：§a${0} §b筆"
   storageInitFailed: "§c儲存初始化失敗"
-  activationFailed: "§e待啟用資料驗證失敗，繼續使用原資料來源"
-  stagedStopped: "§c背景搬遷停止，有效資料未切換"
-  stagedDone: "§b背景搬遷完成，停服更新來源後才會切換"
-  stagedNotStarted: "§c背景搬遷未啟動，有效資料未切換"
   # ${0}＝例外類別
   legacyImportFailed: "§c舊玩家資料匯入失敗：§a${0}"
   # ${0}＝玩家 ${1}＝例外類別
@@ -256,8 +232,6 @@ log:
   writerCloseFailed: "§e玩家資料寫入器未能正常關閉"
   closeFailed: "§e舊名稱資料未能正常關閉：§a${0}"
   displayOld: "§etokaDisplay 版本太舊，稱號不會顯示在名稱標籤"
-  # 寫進 stage 目錄 NOTICE.txt 的內容（給管理員看的檔案，不含色碼）
-  stageNotice: "私人搬遷快照。不可加入 Git。ready 不代表正式資料已切換；線上來源仍須停服後補齊差異。"
 
 welcome:
   # 新玩家第一次進服看到的引導（一頁，按「開始遊玩」才算完成）。${0}＝玩家名稱。

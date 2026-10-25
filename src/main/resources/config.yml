@@ -1,7 +1,5 @@
 # tokaProfiles 設定檔（繁體中文註解）
 # 修改後需重新啟動伺服器才會套用。
-# 注意：切換資料集（staged.activate-next-restart）或完成離線匯入時，插件會用「單行」方式改寫
-# 本檔對應的值，其餘內容與這些註解都會原樣保留。
 
 # 顯示語言，決定 lang/<語言>.yml 的文字。目前提供：zh-TW（繁體中文）。
 # 伺服器擁有者可在 plugins/tokaProfiles/lang/ 放同名檔案覆蓋個別文字。
@@ -12,47 +10,12 @@ help-lines-per-page: 8
 # 玩家資料的儲存方式
 storage:
   # 儲存後端，可填：sqlite（預設）、json、yaml。
-  # 切換後端不會自動搬移既有資料，必須先備份並以搬遷流程驗證，不能直接改這裡。
+  # 切換後端不會自動搬移既有資料，不能直接改這裡。
   backend: sqlite
   # 背景寫入佇列容量，可填 1 以上的整數；佇列滿時寫入會被拒絕而不是無限堆積。
   queue-capacity: 128
   # 目前有效的資料目錄（相對於插件資料夾，必須在插件資料夾內，不接受符號連結）。
-  # 通過驗證的新資料集啟用後，插件會自動改成新目錄；舊目錄會保留。
   active-directory: storage
-
-# 背景分批搬遷（建議使用）：把來源快照搬進獨立資料集，不影響目前有效資料。
-staged:
-  # 是否在啟動時開始背景搬遷。可填：true、false。
-  enabled: false
-  # 來源快照 JSON（playerData 的 rows 陣列），相對於插件資料夾，上限 64 MiB。
-  source: legacy-playerData.json
-  # 搬遷資料集目錄，必須與 storage.active-directory 互相獨立（不可包含彼此）。
-  directory: staged-migration
-  # Plan 身分證據 JSON（格式 [{"uuid":"…","name":"…"}]），只用來交叉核對；留空表示不使用。
-  plan-evidence: ""
-  # 每批處理的筆數，可填 1 到 1000。
-  batch-size: 50
-  # 每批之間等待的毫秒數，可填 0 到 60000。
-  delay-ms: 100
-  # 是否在下次重啟時切換到已驗證的新資料集。可填：true、false。
-  # 需先正常停服、重新匯出來源，並同時把下一項設為 true；驗證失敗會保留原有效來源。
-  # 切換成功後插件會自動把本項、下一項與 staged.enabled 改回 false。
-  activate-next-restart: false
-  # 確認來源已在停服後重新匯出且與搬遷時一致。可填：true、false。
-  source-refreshed-after-stop: false
-
-# 離線一次性匯入（舊流程，仍相容；新流程建議用上面的 staged）。
-migration:
-  # 是否在啟動時執行匯入。可填：true、false。
-  enabled: false
-  # 匯入狀態：pending 表示尚未匯入，匯入完成後插件會自動改成 imported；不要手動改成其他值。
-  stage: pending
-  # 來源快照 JSON，相對於插件資料夾，必須在插件資料夾內。
-  source: legacy-playerData.json
-  # 來源檔的 SHA-256（64 位十六進位），必須與實際檔案一致才會匯入。
-  source-sha256: ""
-  # 最後確認。可填：true、false；匯入後插件會自動改回 false，避免重複匯入。
-  confirm: false
 
 # 選用 Plan 展示。預設 auto／all；使用管理指令即時切換。
 plan:

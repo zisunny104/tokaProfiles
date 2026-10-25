@@ -7,7 +7,6 @@
 - **城市通**：玩家輸入 `/profile`，看到自己的名稱與識別碼；尚未有資料時會提示「尚未完成玩家資料搬遷」。
 - **稱號**：管理員可設定玩家稱號，支援空白與色碼，最長 255 字元。稱號只用來顯示，不代表任何權限。
 - **同名處理**：同名但 UUID 不同的玩家視為不同人；用名稱查詢時若對到多位，不會任選一位，請改用 UUID。
-- **舊資料搬遷**：把舊系統匯出的玩家資料在背景分批搬進來，過程不影響目前的有效資料。
 
 ## 玩家指令
 
@@ -26,7 +25,6 @@
 
 `/profile titles` 與 `/profile title` 相同。`tokaProfiles.self` 預設所有人，可開啟城市通；`tokaProfiles.title.admin` 預設 OP。
 
-搬遷舊資料建議採用背景分批：先停服，把舊資料匯出的 JSON 放進插件資料夾，在 `config.yml` 設定 `staged.*` 後啟動，資料會搬進獨立資料集；驗證完成後，再同時將 `staged.activate-next-restart` 與 `staged.source-refreshed-after-stop` 設為 `true`，下次重啟即切換，並自動把這些開關改回 `false`。驗證失敗時會保留原本的有效資料。
 
 ## 設定 config.yml
 
@@ -35,17 +33,9 @@
 | key | 預設 | 說明 |
 | --- | --- | --- |
 | `language` | `zh-TW` | 訊息語言 |
-| `storage.backend` | `sqlite` | `sqlite`、`json`、`yaml`；切換前必須先備份並搬遷，不能只改這裡 |
+| `storage.backend` | `sqlite` | `sqlite`、`json`、`yaml`；切換後端不會自動搬移既有資料，不能只改這裡 |
 | `storage.queue-capacity` | `128` | 背景寫入佇列容量，滿了會拒絕寫入 |
-| `storage.active-directory` | `storage` | 目前使用的資料目錄；切換資料集後會自動更新 |
-| `staged.enabled` | `false` | 啟動時開始背景搬遷 |
-| `staged.source` | `legacy-playerData.json` | 舊資料匯出檔（上限 64 MiB） |
-| `staged.directory` | `staged-migration` | 搬遷資料集目錄，須與有效目錄互相獨立 |
-| `staged.batch-size`、`staged.delay-ms` | `50`、`100` | 每批筆數與批次間隔（毫秒） |
-| `staged.plan-evidence` | 空白 | 選用的 Plan 身分證據 JSON 路徑，用於交叉核對 |
-| `staged.source-refreshed-after-stop` | `false` | 確認已停服重新匯出來源，且與搬遷時一致；切換時必須為 `true` |
-| `staged.activate-next-restart` | `false` | 下次重啟切換到已驗證的新資料集（需同時確認來源已重新匯出） |
-| `migration.enabled` | `false` | 舊的離線一次性匯入，需 `confirm` 與來源檔的 SHA-256 |
+| `storage.active-directory` | `storage` | 目前使用的資料目錄 |
 
 ## 串接
 
@@ -65,7 +55,6 @@
 
 ## 疑難排解
 
-- **城市通顯示「尚未完成玩家資料搬遷」？** 該玩家的資料還沒有搬進來，請依上述流程搬遷。
 - **用名稱設定稱號失敗？** 可能有多位玩家同名，請改用 UUID。
 
 ### Plan 選用整合

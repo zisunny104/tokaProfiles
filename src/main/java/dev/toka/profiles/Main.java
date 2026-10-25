@@ -6,12 +6,9 @@ import cn.nukkit.Player;
 import cn.nukkit.command.*;
 import cn.nukkit.command.data.CommandParameter;
 import cn.nukkit.command.data.CommandParamType;
-import cn.nukkit.form.window.FormWindowSimple;
-import cn.nukkit.form.element.ElementButton;
 import dev.toka.i18n.Messages;
 public final class Main extends PluginBase implements cn.nukkit.event.Listener {
  private ProfileRepository profiles;
- private java.util.concurrent.CompletableFuture<?> migration;
  private Messages messages;
  private AutoCloseable plan;
  private dev.toka.profiles.legacy.LegacyBook book;
@@ -47,7 +44,7 @@ public final class Main extends PluginBase implements cn.nukkit.event.Listener {
   new CommandParameter[]{CommandParameter.newEnum("動作",new String[]{"plan"}),CommandParameter.newEnum("Plan動作",new String[]{"mode"}),CommandParameter.newEnum("模式",new String[]{"auto","enable","disable"})},
   new CommandParameter[]{CommandParameter.newEnum("動作",new String[]{"plan"}),CommandParameter.newEnum("Plan動作",new String[]{"fields"}),CommandParameter.newEnum("欄位",new String[]{"all","none","exists","title","count"})});
   DisplayLink.register(this,getConfig().getString("nametag.title-suffix","§6-"));
-  messages=new Messages(getClass().getClassLoader(),getDataFolder().toPath(),getConfig().getString("language","zh-TW"),line->getLogger().warning(line));Texts.use(messages);try{Backend backend=Backend.valueOf(getConfig().getString("storage.backend","sqlite").toUpperCase(java.util.Locale.ROOT));prepareMigration(backend);var active=localPath(getConfig().getString("storage.active-directory","storage"));try{active=activationPath(backend);}catch(Exception error){getLogger().error(messages.text("log.activationFailed"),error);}profiles=ProfileRepository.open(new StoreConfig(backend,active,1),getConfig().getInt("storage.queue-capacity",128));getLogger().info(messages.text("log.ready",profiles.snapshot().size()));workers.add(offline().fillMissing());startStaging(backend);startLegacy(backend);getServer().getPluginManager().registerEvents(this,this);refreshPlan();}catch(Exception e){getLogger().error(messages.text("log.storageInitFailed"),e);getServer().getPluginManager().disablePlugin(this);}}
+  messages=new Messages(getClass().getClassLoader(),getDataFolder().toPath(),getConfig().getString("language","zh-TW"),line->getLogger().warning(line));Texts.use(messages);try{Backend backend=Backend.valueOf(getConfig().getString("storage.backend","sqlite").toUpperCase(java.util.Locale.ROOT));var active=localPath(getConfig().getString("storage.active-directory","storage"));profiles=ProfileRepository.open(new StoreConfig(backend,active,1),getConfig().getInt("storage.queue-capacity",128));getLogger().info(messages.text("log.ready",profiles.snapshot().size()));workers.add(offline().fillMissing());startLegacy(backend);getServer().getPluginManager().registerEvents(this,this);refreshPlan();}catch(Exception e){getLogger().error(messages.text("log.storageInitFailed"),e);getServer().getPluginManager().disablePlugin(this);}}
  private void startLegacy(Backend backend)throws Exception {
   book=dev.toka.profiles.legacy.LegacyBook.open(new StoreConfig(backend,localPath("legacy"),1));
   inheritance=new dev.toka.profiles.legacy.Inheritance(profiles,book,task->getServer().getScheduler().scheduleTask(this,task),line->getLogger().info(line),line->getLogger().warning(line));
@@ -72,6 +69,7 @@ public final class Main extends PluginBase implements cn.nukkit.event.Listener {
    worker.setDaemon(true);workers.add(worker);worker.start();
   }
  }
+ // TODO: Reserved for other plugins that act on notes, called by reflection.
  /** The entries of the given type in a player's note, each as its fields (with "type" and "text" too). For plugins that act on notes, by reflection. */
  public static java.util.List<java.util.Map<String,String>> noteEntries(java.util.UUID uuid,String type){
   var self=running;if(self==null||self.profiles==null)return java.util.List.of();
@@ -79,6 +77,7 @@ public final class Main extends PluginBase implements cn.nukkit.event.Listener {
   self.profiles.find(uuid).ifPresent(p->{for(var entry:Notes.entries(p.preferences().getOrDefault("note",""))){if(!entry.type().equals(type))continue;var fields=new java.util.LinkedHashMap<String,String>(entry.fields());fields.put("type",entry.type());fields.put("text",entry.text());out.add(fields);}});
   return out;
  }
+ // TODO: Reserved for other plugins that act on notes, called by reflection.
  /** Every player whose note has an entry of the type. */
  public static java.util.List<java.util.UUID> notedPlayers(String type){
   var self=running;if(self==null||self.profiles==null)return java.util.List.of();
@@ -150,41 +149,6 @@ public final class Main extends PluginBase implements cn.nukkit.event.Listener {
  }
  private void suggest(String name,CommandParameter[]... forms){Command registered=(Command)getCommand(name);if(registered==null)return;registered.getCommandParameters().clear();for(int i=0;i<forms.length;i++)registered.addCommandParameters("choice"+i,forms[i]);}
  private java.nio.file.Path localPath(String value){var root=getDataFolder().toPath().toAbsolutePath().normalize();var path=root.resolve(value).normalize();if(path.equals(root)||!path.startsWith(root))throw new IllegalArgumentException(messages.text("err.path.outside"));for(var p=path;p!=null&&p.startsWith(root);p=p.getParent())if(java.nio.file.Files.isSymbolicLink(p))throw new IllegalArgumentException(messages.text("err.path.symlink"));return path;}
- private java.nio.file.Path activationPath(Backend backend)throws Exception {
-  var active=localPath(getConfig().getString("storage.active-directory","storage"));
-  if(!getConfig().getBoolean("staged.activate-next-restart",false))return active;
-  if(!getConfig().getBoolean("staged.source-refreshed-after-stop",false))throw new IllegalStateException(messages.text("err.activate.needRefresh"));
-  var stage=localPath(getConfig().getString("staged.directory","staged-migration"));
-  var source=localPath(getConfig().getString("staged.source","legacy-playerData.json"));
-  var verified=dev.toka.profiles.migration.StagedProfileMigration.verifyReady(stage,source,backend);
-  getConfig().set("storage.active-directory",getDataFolder().toPath().toAbsolutePath().normalize().relativize(verified).toString());
-  getConfig().set("staged.activate-next-restart",false);getConfig().set("staged.source-refreshed-after-stop",false);getConfig().set("staged.enabled",false);
-  try{ConfigEdit.apply(getDataFolder().toPath().resolve("config.yml"),java.util.Map.of("storage.active-directory",ConfigEdit.quote(getConfig().getString("storage.active-directory")),"staged.activate-next-restart","false","staged.source-refreshed-after-stop","false","staged.enabled","false"));}catch(java.io.IOException | RuntimeException saveError){throw new IllegalStateException(messages.text("err.activate.saveFailed"),saveError);}
-  return verified;
- }
- private void startStaging(Backend backend){
-  if(!getConfig().getBoolean("staged.enabled",false))return;
-  try{var stage=localPath(getConfig().getString("staged.directory","staged-migration"));var active=localPath(getConfig().getString("storage.active-directory","storage"));if(stage.startsWith(active)||active.startsWith(stage))throw new IllegalArgumentException(messages.text("err.stage.notIndependent"));
-   var source=localPath(getConfig().getString("staged.source","legacy-playerData.json"));
-   var evidence=new com.google.gson.JsonArray();String evidenceFile=getConfig().getString("staged.plan-evidence","");if(!evidenceFile.isBlank())evidence=com.google.gson.JsonParser.parseString(java.nio.file.Files.readString(localPath(evidenceFile))).getAsJsonArray();
-   migration=dev.toka.profiles.migration.StagedProfileMigration.startAsync(source,backend,stage,getConfig().getInt("staged.batch-size",50),getConfig().getInt("staged.delay-ms",100),evidence);
-   migration.whenComplete((value,error)->{if(error!=null)getLogger().error(messages.text("log.stagedStopped"),error);else getLogger().info(messages.text("log.stagedDone"));});
-  }catch(Exception error){getLogger().error(messages.text("log.stagedNotStarted"),error);}
- }
- private void prepareMigration(Backend backend)throws Exception {
-  if(!getConfig().getBoolean("migration.enabled",false))return;
-  if(!getConfig().getString("migration.stage","pending").equals("pending"))return;
-  if(!getConfig().getBoolean("migration.confirm",false))throw new IllegalStateException(messages.text("err.import.notConfirmed"));
-  var folder=getDataFolder().toPath().toAbsolutePath().normalize();
-  var source=folder.resolve(getConfig().getString("migration.source","legacy-playerData.json")).normalize();
-  if(!source.startsWith(folder)||java.nio.file.Files.isSymbolicLink(source))throw new IllegalStateException(messages.text("err.import.sourceOutside"));
-  String expected=getConfig().getString("migration.source-sha256","");
-  String actual=java.util.HexFormat.of().formatHex(java.security.MessageDigest.getInstance("SHA-256").digest(java.nio.file.Files.readAllBytes(source)));
-  if(!expected.matches("[a-fA-F0-9]{64}")||!actual.equalsIgnoreCase(expected))throw new IllegalStateException(messages.text("err.import.hashMismatch"));
-  dev.toka.profiles.migration.ProfileMigration.importFile(source,backend,folder.resolve("storage"),folder.resolve("backups"));
-  getConfig().set("migration.stage","imported");getConfig().set("migration.confirm",false);
-  try{ConfigEdit.apply(getDataFolder().toPath().resolve("config.yml"),java.util.Map.of("migration.stage","imported","migration.confirm","false"));}catch(java.io.IOException | RuntimeException saveError){throw new IllegalStateException(messages.text("err.import.saveFailed"),saveError);}
- }
  /** Lines of help.profiles look like "tag|text"; the tag names the permission a line needs. Chat help is paged: /profile help [page]. */
  private void sendHelp(CommandSender sender,String page){
   java.util.function.Predicate<String> allowed=tag->switch(tag){
@@ -237,7 +201,7 @@ public final class Main extends PluginBase implements cn.nukkit.event.Listener {
    overview.open(player,found.get().uuid(),null);return true;
   }
   openCityPass(player);return true;}
- @Override public void onDisable(){running=null;DisplayLink.unregister(this);workers.forEach(Thread::interrupt);workers.clear();closePlan();if(book!=null)try{book.close();}catch(Exception e){getLogger().warning(messages.text("log.closeFailed",e.getClass().getSimpleName()));}if(migration!=null&&!migration.isDone())migration.cancel(true);if(profiles!=null)try{profiles.close();}catch(Exception e){getLogger().error(messages.text("log.writerCloseFailed"),e);}}
+ @Override public void onDisable(){running=null;DisplayLink.unregister(this);workers.forEach(Thread::interrupt);workers.clear();closePlan();if(book!=null)try{book.close();}catch(Exception e){getLogger().warning(messages.text("log.closeFailed",e.getClass().getSimpleName()));}if(profiles!=null)try{profiles.close();}catch(Exception e){getLogger().error(messages.text("log.writerCloseFailed"),e);}}
  private void closePlan(){if(planControl!=null)planControl.registered(false);if(plan!=null)try{plan.close();}catch(Exception|LinkageError e){getLogger().warning(messages.text("plan.unavailable",e.getClass().getSimpleName()));}finally{plan=null;}}
  private void refreshPlan(){closePlan();
   if(planControl==null)planControl=new dev.toka.profiles.plan.PlanControl(this,this::refreshPlan,()->java.util.Set.of("exists","title","count"),(key,args)->messages.text(key,args),"profiles");var plugin=getServer().getPluginManager().getPlugin("Plan");
