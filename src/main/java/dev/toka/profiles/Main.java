@@ -72,6 +72,11 @@ public final class Main extends PluginBase implements cn.nukkit.event.Listener {
   for(var p:self.profiles.snapshot().values()){var note=p.preferences().get("note");if(note!=null&&Notes.entries(note).stream().anyMatch(e->e.type().equals(type)))out.add(p.uuid());}
   return out;
  }
+ /** The account with this name (case-insensitive, as the profile search), or null when there is none, the name is ambiguous or the profiles are not ready. For plugins that act on offline players, by reflection. */
+ public static java.util.UUID findPlayerByName(String name){
+  var self=running;if(self==null||self.profiles==null||name==null||self.profiles.state()!=ProfileRepository.State.READY)return null;
+  return self.profiles.findByName(name).map(dev.toka.profiles.model.Profile::uuid).orElse(null);
+ }
  /** Every old name that has been taken over, name to account; empty while the plugin is not running. For plugins that replace old names. */
  public static java.util.Map<String,java.util.UUID> legacyResolved(){var self=running;return self==null||self.book==null?java.util.Map.of():self.book.resolved();}
  /** What the old record said about an account that took over a name: village, discordId, title. Empty when it has none. */
