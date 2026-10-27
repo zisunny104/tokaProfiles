@@ -172,6 +172,7 @@ ui:
     btnNotes: "備註"
     btnOverview: "玩家總覽"
     btnLegacy: "舊名稱"
+    btnAnnounce: "公告管理"
     accept: "確認"
     pick:
       title: "選擇玩家"

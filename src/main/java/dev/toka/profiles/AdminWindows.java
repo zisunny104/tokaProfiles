@@ -23,9 +23,11 @@ import java.util.function.Consumer;
 /** The admin window of the city pass: notes of players and the old names that wait for a decision. Only for people with the permissions. */
 final class AdminWindows {
     static final String NOTE = "tokaProfiles.note", LEGACY = "tokaProfiles.legacy";
+    /** The permissions of tokaDisplay for the broadcasts and the MOTD; its window is opened by the command it has. */
+    private static final String BROADCAST = "tokaDisplay.broadcast.manage", MOTD = "tokaDisplay.motd.manage";
     private static final int NOTE_LIMIT = 1000, LEGACY_SHOWN = 30;
     private static final String ICON_NOTE = "textures/items/book_writable", ICON_LEGACY = "textures/items/name_tag", ICON_PLAYER = "textures/items/spyglass",
-            ICON_BACK = "textures/ui/arrow_left";
+            ICON_ANNOUNCE = "textures/items/paper", ICON_BACK = "textures/ui/arrow_left";
 
     private final Main plugin;
     private final Forms forms;
@@ -41,7 +43,12 @@ final class AdminWindows {
 
     private String t(String key, Object... args) { return messages().text(key, args); }
 
-    static boolean allowed(Player player) { return player.hasPermission(NOTE) || player.hasPermission(LEGACY); }
+    /** True when the player may manage the announcements and tokaDisplay, which has the window for them, is installed. */
+    static boolean announcing(Player player) {
+        return (player.hasPermission(BROADCAST) || player.hasPermission(MOTD)) && player.getServer().getPluginManager().getPlugin("tokaDisplay") != null;
+    }
+
+    static boolean allowed(Player player) { return player.hasPermission(NOTE) || player.hasPermission(LEGACY) || announcing(player); }
 
     void open(Player player) {
         if (!allowed(player)) { player.sendMessage(t("err.noNotePermission")); return; }
@@ -52,6 +59,7 @@ final class AdminWindows {
             items.add(Forms.Item.of(t("ui.admin.btnOverview"), ICON_PLAYER, p -> pick(p, "", null, (q, id) -> overview.open(q, id, this::open), this::open)));
         }
         if (player.hasPermission(LEGACY)) items.add(Forms.Item.of(t("ui.admin.btnLegacy"), ICON_LEGACY, p -> legacySearch(p, "")));
+        if (announcing(player)) items.add(Forms.Item.of(t("ui.admin.btnAnnounce"), ICON_ANNOUNCE, p -> plugin.getServer().dispatchCommand(p, "display")));
         forms.menu(player, t("ui.admin.title"), "", items);
     }
 
