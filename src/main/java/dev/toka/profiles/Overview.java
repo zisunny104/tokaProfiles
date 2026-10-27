@@ -121,7 +121,11 @@ final class Overview {
 
     private String blank(String value) { return value == null || value.isBlank() ? t("ui.overview.none") : value; }
 
-    private static String time(long millis) { return TIME.format(Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault())); }
+    /** The core keeps the first and the last time a player played in seconds; a value of milliseconds is taken as it is. */
+    static String time(long stamp) {
+        Instant instant = stamp > 100_000_000_000L ? Instant.ofEpochMilli(stamp) : Instant.ofEpochSecond(stamp);
+        return TIME.format(instant.atZone(ZoneId.systemDefault()));
+    }
 
     private static Optional<LocalDate> day(JsonObject checkIn) {
         try { return Optional.of(LocalDate.parse(checkIn.get("lastDay").getAsString())); }
